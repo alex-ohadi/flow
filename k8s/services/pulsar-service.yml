@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsar-broker
+spec:
+  selector:
+    app: pulsar-alex-flow 
+  ports:
+    - name: pulsar-broker
+      protocol: TCP
+      port: 6650
+      targetPort: 6650
+    - name: pulsar-http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

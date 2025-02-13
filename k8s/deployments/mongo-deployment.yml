@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-alex-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-alex-flow
+  template:
+    metadata:
+      labels:
+        app: mongodb-alex-flow
+    spec:
+      containers:
+        - name: mongodb-alex-flow
+          image: mongo:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 27017
+          envFrom:
+            - secretRef:
+                name: env
+          volumeMounts:
+            - name: init-mongo-script
+              mountPath: /docker-entrypoint-initdb.d/init-mongo.js
+              subPath: init-mongo.js
+            - name: mongo-data
+              mountPath: /data/db
+            - name: mongo-config
+              mountPath: /etc/mongo/mongod.conf
+              subPath: mongod.conf
+      volumes:
+        - name: init-mongo-script
+          configMap:
+            name: mongo-init-script
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: mongo-pvc
+        - name: mongo-config
+          configMap:
+            name: mongo-config

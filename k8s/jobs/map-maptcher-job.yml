@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: map-matcher
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: map-matcher
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: map-matcher
+          image: flow-map-matcher-alex-flow:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: env
+          ports:
+            - containerPort: 6650

@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import pulsar  # Import Pulsar client
+import time
 
 # Add the build directory to sys.path
 sys.path.append(os.path.abspath('build'))
@@ -13,15 +14,62 @@ try:
 except ImportError as e:
     print("Error importing 'hmm_map_matcher':", e)
 
-# Pulsar client setup (connection to Pulsar broker)
-pulsar_client = pulsar.Client('pulsar://pulsar-broker:6650')
+# Max retries and delay settings for connecting to pulsar
+MAX_RETRIES = 10
+DELAY_SECONDS = 15
 
-# Create a Pulsar producer to send GPS trace data
-producer = pulsar_client.create_producer('persistent://public/default/gps-traces')
+def connect_to_pulsar():
+    """ Attempt to connect to Pulsar with retries. """
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"Attempt {attempt}: Connecting to Pulsar broker...")
+            pulsar_client = pulsar.Client('pulsar://pulsar-broker:6650')
+            print("Successfully connected to Pulsar client!")
+            return pulsar_client
+        except Exception as e:
+            print(f"Connection attempt {attempt} failed: {e}")
+            time.sleep(DELAY_SECONDS)
+    
+    print("🚨 Failed to connect after multiple attempts. Exiting.")
+    exit(1)
 
-# Create a Pulsar consumer to read GPS trace data
-consumer = pulsar_client.subscribe('persistent://public/default/gps-traces', 
-                                   subscription_name='gps-trace-subscription')
+def create_producer(client):
+    """ Attempt to create a producer with retries and logging. """
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"Attempt {attempt}: Creating producer...")
+            producer = client.create_producer('persistent://public/default/gps-traces')
+            print("Successfully created producer!")
+            return producer
+        except Exception as e:
+            print(f"Producer creation attempt {attempt} failed: {e}")
+            time.sleep(DELAY_SECONDS)
+    
+    print("🚨 Failed to create producer after multiple attempts. Exiting.")
+    exit(1)
+
+def create_consumer(client):
+    """ Attempt to create a consumer with retries and logging. """
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"Attempt {attempt}: Creating consumer...")
+            consumer = client.subscribe(
+                'persistent://public/default/gps-traces',
+                subscription_name='gps-trace-subscription'
+            )
+            print("Successfully created consumer!")
+            return consumer
+        except Exception as e:
+            print(f"Consumer creation attempt {attempt} failed: {e}")
+            time.sleep(DELAY_SECONDS)
+    
+    print("Failed to create consumer after multiple attempts. Exiting.")
+    exit(1)
+
+# Main execution
+pulsar_client = connect_to_pulsar()
+producer = create_producer(pulsar_client)
+consumer = create_consumer(pulsar_client)
 
 # Function to send a GPS trace to Pulsar
 def send_gps_trace(gps_trace_data):

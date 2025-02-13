@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-alex-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulsar-alex-flow
+  template:
+    metadata:
+      labels:
+        app: pulsar-alex-flow
+    spec:
+      containers:
+        - name: pulsar-broker
+          image: apachepulsar/pulsar:2.10.1
+          imagePullPolicy: Always
+          command: ["bash", "-c", "bin/pulsar standalone"]
+          ports:
+            - containerPort: 6650
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: env
