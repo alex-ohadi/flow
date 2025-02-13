@@ -88,8 +88,6 @@ The goal of this challenge is to demonstrate your ability to integrate a C++ lib
     2. Schedule it to run daily at 12:00 UTC.
 
 
-
-
 ## 8. Documentation on How to Run
 
 **Objective**: Provide instructions for deploying and running the pipeline.

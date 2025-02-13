@@ -1,4 +1,18 @@
 ## BACKEND
+Author: Alex Ohadi
+Thurs, Feb 13 2025
+
+Python file that makes all this work:
+ - flow/python/mapmatcher/shoopdawhoop.py
+
+Map Matcher C++ file as python import:
+ - flow/python/mapmatcher/mapmatcher.cpp
+
+Docker Compose:
+ - flow/docker-compose.yml
+
+Dockerfile for Python Container that connects to Pulsar
+ - flow/python/Dockerfile
 
 **Install** 
 
@@ -6,68 +20,46 @@
 - `brew install cmake`
 - `brew install pybind11`
 - `brew install colima`
-- `colima start --memory 4` for pulsar
 - `brew install docker`
 - `brew install docker-compose`
-
 - Install Visual Studio
-- Install Mongo Compass
+- Install Mongo Compass *Optional*
 
-# C library file location
+# Note for local cmake: C library file location after build
 flow/python/mapmatcher/build/build/libhmm_map_matcher.so
-Architectures in the fat file: libhmm_map_matcher.so are: x86_64 arm64 
+Note, it was created for architectures in the fat file: x86_64 & arm64 
 
-
-##
+## Local Test Run *Optional* (without pulsar or containerization)
 How to build and run python script
 `cd flow/python/mapmatcher/`
 `rm -rf build;`
-`cmake -S . -B build`
-`cd build`
-`make`
-`cd ..`
+`cmake -S . -B build && make -C build`
 `mv build/libhmm_map_matcher.so build/hmm_map_matcher.so`
-`python3 shoopdawhoop.py`
+`python3 shoopdawhoop-local.py`
 
 
-***Prerequisites***
-To get started run:
-`sudo npm install`
 
-Add .env and .env-prod to your directory from Github Owner
 
-### Run as docker container
-
-# LOCAL
+### START HERE: Run as docker container
 1. Create the external volume for database: 
   - `./create_mongo_data.sh`  (run once)
-2. Start docker engine: 
-  - `colima start` (run once) 
-3. - Add to ~/.bashrc : `echo 'export DOCKER_HOST="unix://$HOME/.colima/docker.sock"' >> ~/.bashrc && source ~/.bashrc`
-5. Start docker containers:
+2. Start docker engine, memory settings are for pulsar: 
+  - `colima start --memory 4` 
+  - *If issues with colima try this* Add to ~/.bashrc : `echo 'export DOCKER_HOST="unix://$HOME/.colima/docker.sock"' >> ~/.bashrc && source ~/.bashrc`
+3. Start docker containers:
   - `./start.sh`
 
-
-# PROD
-1. Create the external volume for database: 
- - `./create_mongo_data.sh` (run once)
-2. Start docker containers:
- -  `./start-prod.sh`
 
 **DOCKER COMMANDS**
 
 Run `docker ps` to see the running containers
 
-Run `docker python logs` 
+Run `docker map-matcher-alex-flow logs` 
 
-Run `docker exec -it python sh` to go inside running container
-
+Run `docker exec -it map-matcher-alex-flow sh  ` to go inside running container
 
 # Bring down stack
 `docker compose down -v`
-
-
-
 
 
 To use cmdline tables:
@@ -88,27 +80,4 @@ show:
 `db.<collection>.find()`
 
 
-# Logs:
-
-`cd /var/log/mongodb/`
-`tail -f mongod.log | jq`
-
-or 
-
-`docker logs --follow <mongo_id> | jq`
-
-
-# For apple M1 chips;
-
-colima start --arch aarch64 --no-qemu
-
-# Mongo Examples:
-
-Login:
-mongosh --port 27017 -u "<user_name>" --authenticationDatabase "<db_name>" -p "<password>"
-
-Show Collection:
-use <db_name>
-show collections
-db.<collection>.find()
-
+Author: Alex Ohadi
