@@ -1,0 +1,56 @@
+[
+  {
+    "journey_id": "210ad9dcf45a727fc038e55b055d8c01",
+    "data_point_id": "6fdeada5c361f1e97c08dbb4c1c9af1e",
+    "timestamp": "2022-12-31T16:59:49.000-0700",
+    "lat": 37.176278,
+    "lon": -113.333206,
+    "speed": 111.74,
+    "heading": 85
+  },
+  {
+    "journey_id": "c146371264621b510ad0d8e1b5b265fa",
+    "data_point_id": "e94b865fd8f91a260e390c00982d9e1f",
+    "timestamp": "2022-12-31T16:59:51.000-0700",
+    "lat": 37.172349,
+    "lon": -113.323695,
+    "speed": 0,
+    "heading": 269
+  },
+  {
+    "journey_id": "af7f25f5a4140315918f6f53ec8f1e9c",
+    "data_point_id": "897f1e133e24198e6ab9c441bc938861",
+    "timestamp": "2022-12-31T16:59:51.000-0700",
+    "lat": 37.179575,
+    "lon": -113.284348,
+    "speed": 65.66,
+    "heading": 359
+  },
+  {
+    "journey_id": "210ad9dcf45a727fc038e55b055d8c01",
+    "data_point_id": "522301620980d99aa48a6c696203353e",
+    "timestamp": "2022-12-31T16:59:52.000-0700",
+    "lat": 37.1763,
+    "lon": -113.332164,
+    "speed": 110.59,
+    "heading": 88
+  },
+  {
+    "journey_id": "27529a60b7eea20c28825fa74617cd71",
+    "data_point_id": "7089737ffe4273003f4caddac8f7fa54",
+    "timestamp": "2022-12-31T16:59:52.000-0700",
+    "lat": 37.176661,
+    "lon": -113.285861,
+    "speed": 51.83,
+    "heading": 259
+  },
+  {
+    "journey_id": "e2fd75121b3228896b2c8e31698a0c4c",
+    "data_point_id": "7c354e1e80352845fca4c2879d5c8d08",
+    "timestamp": "2022-12-31T16:59:53.000-0700",
+    "lat": 37.170753,
+    "lon": -113.328234,
+    "speed": 39.16,
+    "heading": 299
+  }
+]

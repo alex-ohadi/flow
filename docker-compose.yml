@@ -1,0 +1,48 @@
+services:
+  mongodb-alex-flow:
+    container_name: mongodb-alex-flow
+    image: mongo:latest
+    platform: linux/arm64/v8  # Ensure ARM64 architecture for M1/M2 Macs
+    restart: always
+    env_file: ./.env
+    ports:
+      - "27017:27017"
+    networks:
+      - default
+    volumes:
+      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+      - mongo_data:/data/db
+      - ./mongodb/mongod.conf:/etc/mongo/mongod.conf
+  
+  map-matcher-alex-flow:
+    container_name: map-matcher-alex-flow
+    depends_on:
+      - mongodb-alex-flow
+      - pulsar-alex-flow
+    build:
+      context: .
+      dockerfile: python/Dockerfile
+    env_file: ./.env
+    ports:
+      - "6660:6650" 
+    restart: always
+    networks:
+      - default
+
+  pulsar-alex-flow:
+    image: apachepulsar/pulsar:2.10.1
+    container_name: pulsar-broker
+    command: >
+      bash -c "bin/pulsar standalone"
+    ports:
+      - "6650:6650"
+      - "8080:8080" 
+
+volumes:
+  mongo_data:
+    name: mongo_data
+    external: true
+
+networks:
+  default:
+    driver: bridge

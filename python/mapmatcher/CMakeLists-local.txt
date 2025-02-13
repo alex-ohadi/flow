@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.14)
+project(hmm_map_matcher)
+
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+
+# Include directories for macOS SDK and libraries
+include_directories(
+    /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1
+    /opt/homebrew/opt/nlohmann-json/include
+    /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+    /opt/homebrew/include/pybind11
+)
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 REQUIRED)
+
+add_library(hmm_map_matcher MODULE mapmatcher.cpp)
+target_link_libraries(hmm_map_matcher PRIVATE pybind11::module)
