@@ -23,5 +23,5 @@ RUN mv build/libhmm_map_matcher.so build/hmm_map_matcher.so
 
 EXPOSE 6650
 
-CMD ["python", "shoopdawhoop.py"]
+CMD ["python", "map_matcher.py"]
 # CMD ["tail", "-f", "/dev/null"]

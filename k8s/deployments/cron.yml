@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: restart-map-matcher-job
 spec:
-  schedule: "0 12 * * *"  # Runs at 12:00 UTC every day
+  schedule: "0 12 * * *"  # Runs at 12 UTC
   jobTemplate:
     spec:
       template:
@@ -12,4 +12,9 @@ spec:
             - name: map-matcher
               image: flow-map-matcher-alex-flow:latest
               imagePullPolicy: IfNotPresent
-          restartPolicy: OnFailure  # Ensures the pod restarts on failure
+              envFrom:
+                - secretRef:
+                    name: env  # Correct indentation for the secretRef name
+          restartPolicy: Never  
+  successfulJobsHistoryLimit: 3  
+  failedJobsHistoryLimit: 1 

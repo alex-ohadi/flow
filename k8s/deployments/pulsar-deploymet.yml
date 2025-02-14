@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-alex-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulsar-alex-flow
+  template:
+    metadata:
+      labels:
+        app: pulsar-alex-flow
+    spec:
+      containers:
+        - name: pulsar-broker
+          image: apachepulsar/pulsar:2.10.1
+          imagePullPolicy: Always
+          command: ["bash", "-c", "bin/pulsar standalone"]
+          ports:
+            - containerPort: 6650  # Pulsar binary protocol
+            - containerPort: 8080  # Pulsar HTTP API
+          envFrom:
+            - secretRef:
+                name: env
+          env:
+            - name: PULSAR_MEM
+              value: "-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=1024m"
+            - name: PULSAR_CLIENT_OPERATION_TIMEOUT_SECONDS
+              value: "60"
+            - name: PULSAR_CLIENT_CONNECTION_TIMEOUT_MS
+              value: "30000"
+            - name: PULSAR_CLIENT_KEEPALIVE_INTERVAL_SECONDS
+              value: "30"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          readinessProbe:
+            tcpSocket:
+              port: 6650
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 5
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bin/pulsar-admin", "clusters", "delete", "standalone"]

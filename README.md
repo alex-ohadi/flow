@@ -1,9 +1,9 @@
-## BACKEND
+## Python Map Matcher in K8s deployment 
 Author: Alex O
 Thurs, Feb 13 2025
 
 Python file that makes all this work:
- - flow/python/mapmatcher/shoopdawhoop.py
+ - flow/python/mapmatcher/map_matcher.py
 
 Map Matcher C++ file as python import:
  - flow/python/mapmatcher/mapmatcher.cpp
@@ -43,8 +43,8 @@ https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/
 flow/python/mapmatcher/build/build/libhmm_map_matcher.so
 Note, it was created for architectures in the fat file: x86_64 & arm64 
 
-# A simplified edges/events for testing is being loaded as default
-# To change this modify the `flow/python/mapmatcher/shoopdawhoop.py` script and remove the '2'.
+# A simplified edges/events for testing can be loaded as default
+# To change this modify the `flow/python/mapmatcher/map_matcher.py` script and ref the following:
 - flow/python/mapmatcher/events2.json
 - flow/python/mapmatcher/edges2.json
 
@@ -90,16 +90,23 @@ Run `docker exec -it map-matcher-alex-flow sh  ` to go inside running container
 ### ******************************** Here is what your looking for
 ## Start Kubernetes: Run with K8s
 1. Start minikube and set up colima: 
- - `colima start --memory 4`  - for pulsar
- - `minikube start --driver=docker`
+ - Run `colima start --memory 4`  - for pulsar
+ - Run `minikube start --driver=docker` or if you want to allocate more resources to minikube: `minikube start --driver=docker --cpus=4 --memory=8192 --disk-size=20g`
 2. Start k8s:
  - `docker compose down -v` # Make sure that docker containers are not running concurrently
  - `./start-as-k8s.sh`
 3. Watch pods come up by running k9s, check pre-reqs to download it
  - `k9s`
- - Watch the map-matcher finish by writing into mongodb, and then the job will finish after that
-4. The cron deployment will restart the job at 12 UTC
- - `kubectl get cronjob restart-map-matcher-job`
+ - 1) map-matcher job should run after it connects to pulsar (~2 minutes).
+ - 2) map-matcher writes the completed logs to mongodb.
+ - 3) Finally, the restart-map-matcher should restart the map-matcher job at 12 UTC.
+ - View the cron - 
+ - `kubectl get cronjob` or `kubectl get jobs`
+
+Additional notes:
+Airflow exists here, but did not use since I decided to use mongodb for storage, airflow is not compatiable.
+I still create the DAG here: flow/map_matcher_k8s_dag.py 
+
 **View K8s COMMANDS**
 - Run `k9s` to see the running pods, press `[enter]` on the pods to view logs, or `s` to enter shell, or `d` to describe
 - Run `kubectl get events` to inspect errors
