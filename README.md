@@ -1,145 +1,118 @@
-## Python Map Matcher in K8s deployment 
-Author: Alex O
-Thurs, Feb 13 2025
+# Python Map Matcher in K8s Deployment  
+**Author**: Alex O  
+**Date**: Thurs, Feb 13 2025
 
-Python file that makes all this work:
- - flow/python/mapmatcher/map_matcher.py
+---
 
-Map Matcher C++ file as python import:
- - flow/python/mapmatcher/mapmatcher.cpp
+### Project Overview
 
-Docker Compose:
- - flow/docker-compose.yml
+This project provides a Python-based map matcher that integrates with C++ functionality and runs in a Kubernetes environment.
 
-Dockerfile for Python Container that connects to Pulsar
- - flow/python/Dockerfile
+---
 
-K8s
- - flow/k8s
- - flow/start-as-k8s.sh
+### Key Files
 
-**Install pre-reqs** 
-- `brew install cmake` # for building the cpp file locally
-- `brew install pybind11` # for building the cpp file locally
-- `brew install nlohmann-json` # for building the cpp file locally
-- `brew install colima` # for running docker locally on mac
-- `brew install docker` # for docker 
-- `brew install docker-compose` # for containerization
-- `brew install minikube` # for running k8s locally on mac
+- **Map Matcher Python Script**:  
+  `flow/python/mapmatcher/map_matcher.py`
 
-**Install Kubernetes Guide**
-https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/
+- **Map Matcher C++ File as Python Import**:  
+  `flow/python/mapmatcher/mapmatcher.cpp`
 
-**Instructions to install k8s for Mac Apple Chips:**
--    `curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl"`
-- `   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl.sha256"`
-- `chmod +x ./kubectl`
-- `sudo mv ./kubectl /usr/local/bin/kubectl`
-- `sudo chown root: /usr/local/bin/kubectl`
-- `rm kubectl.sha256`
-- `brew install derailed/k9s/k9s` 
+- **Docker Compose**:  
+  `flow/docker-compose.yml`
 
-# Note for *local* cmake: C library file location after build
-flow/python/mapmatcher/build/build/libhmm_map_matcher.so
-Note, it was created for architectures in the fat file: x86_64 & arm64 
+- **Python Dockerfile for Pulsar Connection**:  
+  `flow/python/Dockerfile`
 
-# A simplified edges/events for testing can be loaded as default
-# To change this modify the `flow/python/mapmatcher/map_matcher.py` script and ref the following:
-- flow/python/mapmatcher/events2.json
-- flow/python/mapmatcher/edges2.json
+- **Kubernetes Deployment Files**:  
+  `flow/k8s`,  
+  `flow/start-as-k8s.sh`
 
-# *Optional* step without containerization below:
-## Local Test Run (without pulsar or containerization)
-How to build and run python script
-- `cd flow/python/mapmatcher/`
-- `rm -rf build;`
-- `cmake -S . -B build -C CMakeLists-local.txt && make -C build`
-- `mv build/libhmm_map_matcher.so build/hmm_map_matcher.so`
-- `python3 shoopdawhoop-local.py`
+---
 
-# *Optional* full deploy as a docker container
-### Docker: Run as docker container
-1. Create the external volume for database: 
-  - `./create_mongo_data.sh`  (run once)
-2. Start docker engine, memory settings are for pulsar: 
-  - `colima start --memory 4` 
-  - *If issues with colima try this* Add to ~/.bashrc : `echo 'export DOCKER_HOST="unix://$HOME/.colima/docker.sock"' >> ~/.bashrc && source ~/.bashrc`
-3. Start docker containers:
-  - `./start-docker-compose.sh`
+### Prerequisites
 
+Install the following dependencies:
 
-# ** *Optional* DOCKER COMMANDS** 
-Run `docker ps` to see the running containers
+```bash
+brew install cmake              # for building the C++ file locally
+brew install pybind11           # for building the C++ file locally
+brew install nlohmann-json      # for building the C++ file locally
+brew install colima             # for running Docker locally on mac
+brew install docker             # for Docker
+brew install docker-compose     # for containerization
+brew install minikube           # for running K8s locally on mac
+```
 
-Run `docker map-matcher-alex-flow logs` 
+### Install Kubernetes Guide
 
-Run `docker exec -it map-matcher-alex-flow sh  ` to go inside running container
+For a detailed installation guide for Kubernetes on macOS, follow this link:  
+[Install kubectl on macOS](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
 
+#### Instructions for Installing Kubernetes on Macs with Apple Chips:
 
-# ** *Optional* Docker: Here is how to view Mongo data of GPS data for matched segments
- - `docker exec -it mongodb-map-matcher sh`
- - `mongosh`
- - `use data`
- - `db.datas.find()`
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl.sha256"
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+sudo chown root: /usr/local/bin/kubectl
+rm kubectl.sha256
+brew install derailed/k9s/k9s
+```
 
-# ** *Optional* Docker: Bring down stack
-- `docker compose down -v`
-- `docker volume rm mongo_data_for_flow`
+### Start Kubernetes: Run with K8s
 
+1. **Start Minikube & Set Up Colima**:  
+   Run `colima start --memory 4` for Pulsar.  
+   Run `minikube start --driver=docker` (or for more resources: `minikube start --driver=docker --cpus=4 --memory=8192 --disk-size=20g`).
 
-### ******************************** Here is what your looking for
-## Start Kubernetes: Run with K8s
-1. Start minikube and set up colima: 
- - Run `colima start --memory 4`  - for pulsar
- - Run `minikube start --driver=docker` or if you want to allocate more resources to minikube: `minikube start --driver=docker --cpus=4 --memory=8192 --disk-size=20g`
-2. Start k8s:
- - `docker compose down -v` # Make sure that docker containers are not running concurrently
- - `./start-as-k8s.sh`
-3. Watch pods come up by running k9s, check pre-reqs to download it
- - `k9s`
- - 1) map-matcher job should run after it connects to pulsar (~2 minutes).
- - 2) map-matcher writes the completed logs to mongodb.
- - 3) Finally, the restart-map-matcher should restart the map-matcher job at 12 UTC.
- - View the cron - 
- - `kubectl get cronjob` or `kubectl get jobs`
+2. **Start K8s**:  
+   - First, stop Docker containers:  
+     `docker compose down -v`
 
-Additional notes:
-Airflow exists here, but did not use since I decided to use mongodb for storage, airflow is not compatiable.
-I still create the DAG here: flow/map_matcher_k8s_dag.py 
+   - Then, deploy with K8s:  
+     `./start-as-k8s.sh`
 
-**View K8s COMMANDS**
-- Run `k9s` to see the running pods, press `[enter]` on the pods to view logs, or `s` to enter shell, or `d` to describe
-- Run `kubectl get events` to inspect errors
+3. **Monitor Pods** with `k9s`:  
+   - Watch the map-matcher job run after it connects to Pulsar (~2 minutes).
+   - View the logs and cron job with `kubectl get cronjob` or `kubectl get jobs`.
 
+---
 
-# Mongo K8s: Here is how to view Mongo data of GPS data for matched segments
- - `k9s`
- - find mongo pod, and press `s` on the mongo pod to shell into it
- - `mongosh`
- - `use data`
- - `db.datas.find()`
+#### MongoDB in K8s: View Data for Matched GPS Segments
 
-# Stop K8s:
-- `./stop-as-k8s.sh`
+1. Run `k9s` and find the Mongo pod.
+2. Press `s` on the Mongo pod to enter its shell, then use Mongo Shell:
+   ```bash
+   mongosh
+   use data
+   db.datas.find()
+  ```
 
+  ---
 
-# More helpful mongo commands:
-To use cmdline tables:
-`mongosh`
+### Stop Kubernetes
 
-list:
-`show databases`
-`use <database>`
+To stop the Kubernetes deployment, use:  
+`./stop-as-k8s.sh`
 
-delete:
-`use <database>`
-`show collections`
-`db.<collection>.drop()`
+---
 
-show:
-`use <database>`
-`show collections`
-`db.<collection>.find()`
+### More Helpful MongoDB Commands
 
-**Thank you!**
-If you have any questions, you can reach out to Alex O
+- **Start Mongo Shell**:  
+  `mongosh`
+
+- **List Databases**:  
+  `show databases`
+
+- **Use a Database**:  
+  `use <database>`
+
+- **Delete a Collection**:  
+  ```bash
+  use <database>
+  show collections
+  db.<collection>.drop()
+  ```
