@@ -99,6 +99,32 @@ To stop the Kubernetes deployment, use:
 
 ---
 
+### *Optional* Start Docker: Run with docker
+
+1. **Start As docker containers**  
+   Run `colima start --memory 4` for Pulsar. 
+   Run `docker volume create mongo_data_for_flow` to create mongo external volume
+   Run `./start-docker-compose.sh`
+2. **Login to Mongodb**
+   ```bash
+    docker exec -it <mongodb-container> sh
+   mongosh
+   use data
+   db.datas.find()
+   ```
+3. **Stop Docker container**
+   `docker compose down -v`
+---
+
+
+### *Optional* Start local build for testing (no mongo or pulsar)
+- `cd flow/python/mapmatcher/`
+- `rm -rf build;`
+- `cmake -S . -B build -C CMakeLists-local.txt && make -C build` # uses local CMakeLists-local.txt
+- `mv build/libhmm_map_matcher.so build/hmm_map_matcher.so`
+- `python3 map-matcher.py`
+
+
 ### More Helpful MongoDB Commands
 
 - **Start Mongo Shell**:  
