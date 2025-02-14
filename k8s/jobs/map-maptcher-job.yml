@@ -1,9 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: map-matcher
+  generateName: map-matcher-  
 spec:
   backoffLimit: 0
+  ttlSecondsAfterFinished: 3600  
   template:
     metadata:
       labels:

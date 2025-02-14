@@ -1,11 +1,8 @@
+import sys
 import os
 import json
-import pulsar
+import pulsar 
 import time
-import sys
-import pymongo
-from datetime import datetime
-from pymongo import MongoClient
 
 # Add the build directory to sys.path
 sys.path.append(os.path.abspath('build'))
@@ -17,7 +14,7 @@ try:
 except ImportError as e:
     print("Error importing 'hmm_map_matcher':", e)
 
-# Max retries and delay settings
+# Max retries and delay settings for connecting to pulsar
 MAX_RETRIES = 10
 DELAY_SECONDS = 15
 
@@ -27,10 +24,10 @@ def connect_to_pulsar():
         try:
             print(f"Attempt {attempt}: Connecting to Pulsar broker...")
             pulsar_client = pulsar.Client('pulsar://pulsar-broker:6650')
-            print("✅ Successfully connected to Pulsar client!")
+            print("Successfully connected to Pulsar client!")
             return pulsar_client
         except Exception as e:
-            print(f"❌ Connection attempt {attempt} failed: {e}")
+            print(f"Connection attempt {attempt} failed: {e}")
             time.sleep(DELAY_SECONDS)
     
     print("🚨 Failed to connect after multiple attempts. Exiting.")
@@ -42,10 +39,10 @@ def create_producer(client):
         try:
             print(f"Attempt {attempt}: Creating producer...")
             producer = client.create_producer('persistent://public/default/gps-traces')
-            print("✅ Successfully created producer!")
+            print("Successfully created producer!")
             return producer
         except Exception as e:
-            print(f"❌ Producer creation attempt {attempt} failed: {e}")
+            print(f"Producer creation attempt {attempt} failed: {e}")
             time.sleep(DELAY_SECONDS)
     
     print("🚨 Failed to create producer after multiple attempts. Exiting.")
@@ -60,67 +57,38 @@ def create_consumer(client):
                 'persistent://public/default/gps-traces',
                 subscription_name='gps-trace-subscription'
             )
-            print("✅ Successfully created consumer!")
+            print("Successfully created consumer!")
             return consumer
         except Exception as e:
-            print(f"❌ Consumer creation attempt {attempt} failed: {e}")
+            print(f"Consumer creation attempt {attempt} failed: {e}")
             time.sleep(DELAY_SECONDS)
     
-    print("🚨 Failed to create consumer after multiple attempts. Exiting.")
+    print("Failed to create consumer after multiple attempts. Exiting.")
     exit(1)
 
-def connect_to_mongodb():
-    """ Establish connection to MongoDB with retries. """
-    mongo_user = os.getenv("data_username")
-    mongo_password = os.getenv("data_password")
-    mongo_host = "mongodb-map-matcher"
-    mongo_port = "27017"
-
-    if not mongo_user or not mongo_password:
-        print("🚨 MongoDB username or password is missing from environment variables. Exiting.")
-        exit(1)
-
-    mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/data"
-
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            print(f"Attempt {attempt}: Connecting to MongoDB...")
-            client = MongoClient(mongo_uri)
-            db = client["data"]
-            collection = db["datas"]
-            print("✅ Successfully connected to MongoDB!")
-            return collection
-        except Exception as e:
-            print(f"❌ MongoDB connection attempt {attempt} failed: {e}")
-            time.sleep(DELAY_SECONDS)
-
-    print("🚨 Failed to connect to MongoDB after multiple attempts. Exiting.")
-    exit(1)
-
-# Initialize connections
+# Main execution
 pulsar_client = connect_to_pulsar()
 producer = create_producer(pulsar_client)
 consumer = create_consumer(pulsar_client)
-mongo_collection = connect_to_mongodb()
 
 # Function to send a GPS trace to Pulsar
 def send_gps_trace(gps_trace_data):
-    message = json.dumps(gps_trace_data)
-    producer.send(message.encode('utf-8'))
-    print(f" Sent GPS trace: {gps_trace_data}")
+    message = json.dumps(gps_trace_data)  # Convert GPS trace to JSON
+    producer.send(message.encode('utf-8'))  # Send message to Pulsar topic
+    print(f"Sent GPS trace: {gps_trace_data}")
 
 # Function to consume GPS trace data from Pulsar
 def consume_gps_trace():
     msg = consumer.receive()
-    gps_trace_data = json.loads(msg.data().decode('utf-8'))
-    consumer.acknowledge(msg)
+    gps_trace_data = json.loads(msg.data().decode('utf-8'))  # Decode message from Pulsar
+    consumer.acknowledge(msg)  # Acknowledge message receipt
     return gps_trace_data
 
-# Load the edges data from JSON (road network)
-with open('edges2.json', 'r') as edges_file:
+# Load the edges data from JSON (this contains the road network)
+with open('edges.json', 'r') as edges_file:
     edges_data = json.load(edges_file)
 
-# Convert edges to RoadSegment objects
+# Convert the dictionary to RoadSegment objects
 edges = []
 for edge in edges_data:
     road_segment = hmm_map_matcher.RoadSegment()
@@ -134,11 +102,11 @@ for edge in edges_data:
     road_segment.coordinates = coordinates
     edges.append(road_segment)
 
-# Initialize the matcher
+# Initialize the matcher with the road network
 matcher = hmm_map_matcher.HMMMapMatcher(edges)
 
-# Load the events data from JSON (GPS traces)
-with open('events2.json', 'r') as events_file:
+# Load the events data from JSON (this contains the GPS traces)
+with open('events.json', 'r') as events_file:
     events_data = json.load(events_file)
 
 # List to collect all matched segments
@@ -149,42 +117,34 @@ for event in events_data:
     gps_trace_data = {
         "lat": event["lat"],
         "lon": event["lon"],
-        "timestamp": event["timestamp"]
+        "timestamp": event["timestamp"]  # Include any other necessary fields
     }
     send_gps_trace(gps_trace_data)
 
 # Consume and map-match the GPS traces
-for _ in range(len(events_data)):
+for _ in range(len(events_data)):  # Assuming we're consuming as many events as we sent
     received_trace = consume_gps_trace()
-    print(f"📥 Received GPS trace: {received_trace}")
+    print(f"Received GPS trace: {received_trace}")
 
-    # Convert received trace to GPSPoint object
+    # Convert received GPS trace to GPSPoint object for map matching
     gps_point = hmm_map_matcher.GPSPoint()
     gps_point.latitude = received_trace["lat"]
     gps_point.longitude = received_trace["lon"]
 
-    # Match the trace to the road network
+    # Now pass the list of GPSPoint objects to matchTraceToRoads
     matched_segments = matcher.matchTraceToRoads([gps_point])
 
-    # Add to all_matched_segments list
-    all_matched_segments.append({
-        "gps_trace": received_trace,
-        "matched_segments": matched_segments
-    })
+    # Print matched road segments
+    print("Matched Road Segments:")
+    print(matched_segments)
 
+    # Add the matched segments to the list of all matched segments
+    all_matched_segments.append(matched_segments)
 
-# Final data to push into MongoDB
-document_to_insert = {
-    "timestamp_utc": datetime.utcnow().isoformat(),
-    "matched_data": all_matched_segments
-}
-
-# Insert all matched segments in a single MongoDB push
-try:
-    mongo_collection.insert_one(document_to_insert)
-    print("✅ Successfully inserted all matched data into MongoDB.")
-except Exception as e:
-    print(f"🚨 Failed to insert into MongoDB: {e}")
+# Pretty print the entire matched segments data and save it to 'output.json'
+with open('output.json', 'w') as output_file:
+    json.dump(all_matched_segments, output_file, indent=4)
+    print("All data has been saved to 'output.json'.")
 
 # Close Pulsar client connection
 pulsar_client.close()

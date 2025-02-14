@@ -25,8 +25,8 @@ data:
     // Create data user with readWrite role on 'data' database
     db = db.getSiblingDB('data');
     db.createUser({
-      user: service_username,       // Use the variable for the data username
-      pwd: service_password,        // Use the variable for the data password
+      user: data_username,       // Use the variable for the data username
+      pwd: data_password,        // Use the variable for the data password
       roles: [{ role: 'readWrite', db: 'data' }]  // Read/Write access to the 'data' database
     });
     db.createCollection('datas');  // Create the 'datas' collection

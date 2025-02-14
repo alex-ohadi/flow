@@ -31,7 +31,13 @@ kubectl apply -f ./deployments
 echo "waiting 6 seconds for deployments to come up"
 sleep 6
 echo "starting python job"
-kubectl apply -f ./jobs
+kubectl create -f ./jobs/
+
+sleep 2
+
+kubectl create job --from=cronjob/restart-map-matcher-job restart-map-matcher-manual-job
 
 echo "****"
-echo "** Run `k9s` to view pods **"
+echo "** Run k9s to view pods **"
+
+echo "** See the readme for the next steps involving copying in the airflow dag"

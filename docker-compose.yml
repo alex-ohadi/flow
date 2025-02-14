@@ -1,6 +1,6 @@
 services:
   mongodb-alex-flow:
-    container_name: mongodb-alex-flow
+    container_name: mongodb-map-matcher
     image: mongo:latest
     platform: linux/arm64/v8  # Ensure ARM64 architecture for M1/M2 Macs
     restart: always
@@ -11,7 +11,7 @@ services:
       - default
     volumes:
       - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
-      - mongo_data:/data/db
+      - mongo_data_for_flow:/data/db
       - ./mongodb/mongod.conf:/etc/mongo/mongod.conf
   
   map-matcher-alex-flow:
@@ -39,8 +39,8 @@ services:
       - "8080:8080" 
 
 volumes:
-  mongo_data:
-    name: mongo_data
+  mongo_data_for_flow:
+    name: mongo_data_for_flow
     external: true
 
 networks:

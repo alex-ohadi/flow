@@ -13,7 +13,7 @@ spec:
         app: mongodb-alex-flow
     spec:
       containers:
-        - name: mongodb-alex-flow
+        - name: mongodb-map-matcher
           image: mongo:latest
           imagePullPolicy: Always
           ports:
