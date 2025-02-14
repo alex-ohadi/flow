@@ -88,9 +88,9 @@ brew install derailed/k9s/k9s
    mongosh
    use data
    db.datas.find()
-  ```
+   ```
 
-  ---
+---
 
 ### Stop Kubernetes
 

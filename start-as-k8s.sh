@@ -33,8 +33,6 @@ echo "Starting Python job..."
 kubectl create -f ./jobs/
 
 sleep 2
-
-kubectl create job --from=cronjob/restart-map-matcher-job restart-map-matcher-manual-job
 echo "****"
 echo "** Success **"
 echo "****"

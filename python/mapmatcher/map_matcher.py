@@ -179,12 +179,23 @@ document_to_insert = {
     "matched_data": all_matched_segments
 }
 
-# Insert all matched segments in a single MongoDB push
-try:
-    mongo_collection.insert_one(document_to_insert)
-    print("✅ Successfully inserted all matched data into MongoDB.")
-except Exception as e:
-    print(f"🚨 Failed to insert into MongoDB: {e}")
+
+def insert_large_document_in_parts(mongo_collection, document):
+    # Split the document into smaller parts (for example, by list of matched segments)
+    part_size = 1000  # Adjust size to fit within BSON limit
+    segments = document.get('matched_data', [])
+    
+    # Insert each part separately
+    for i in range(0, len(segments), part_size):
+        part = {**document, 'matched_data': segments[i:i + part_size]}  # Split the segments
+        try:
+            mongo_collection.insert_one(part)
+            print(f"✅ Successfully inserted part {i//part_size + 1}.")
+        except Exception as e:
+            print(f"🚨 Failed to insert part {i//part_size + 1}: {e}")
+
+# Call the function
+insert_large_document_in_parts(mongo_collection, document_to_insert)
 
 # Close Pulsar client connection
 pulsar_client.close()
