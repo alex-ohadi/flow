@@ -14,7 +14,10 @@ kubectl delete -f ./deployments --ignore-not-found=true
 echo "** Waiting for Deployments to be fully deleted **"
 kubectl wait --for=delete deployment --all --timeout=60s
 
-echo "** Deleting persistent volume claims (PVCs) after StatefulSet is gone **"
+echo "** Stop airflow **"
+helm uninstall airflow -n flow-alex
+
+echo "** Deleting persistent volume claims (PVCs) **"
 kubectl delete -f ./persistant-volume-claims --ignore-not-found=true
 
 echo "** Deleting services, configmaps, and secrets **"
@@ -24,7 +27,6 @@ kubectl delete secret env --ignore-not-found=true
 
 echo "** Deleting Namespace **"
 kubectl delete -f ./namespaces --ignore-not-found=true
-
 
 # This deletes all <none> images automatically.
 docker image prune -f

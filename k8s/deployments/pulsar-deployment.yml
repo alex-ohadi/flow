@@ -35,22 +35,22 @@ spec:
           resources:
             requests:
               cpu: "500m"
-              memory: "1Gi"
-            limits:
-              cpu: "1"
               memory: "2Gi"
-          readinessProbe:
-            tcpSocket:
-              port: 6650
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            failureThreshold: 5
-          livenessProbe:
-            tcpSocket:
-              port: 8080
-            initialDelaySeconds: 15
-            periodSeconds: 20
-            failureThreshold: 3
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          # readinessProbe:
+          #   tcpSocket:
+          #     port: 6650
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          #   failureThreshold: 5
+          # livenessProbe:
+          #   tcpSocket:
+          #     port: 8080
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 20
+          #   failureThreshold: 3
           lifecycle:
             preStop:
               exec:
