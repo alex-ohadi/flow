@@ -1,0 +1,46 @@
+airflow:
+  executor: "CeleryExecutor" 
+
+  dags:
+    persistence:
+      enabled: true
+      existingClaim: airflow-dag-pvc 
+
+  postgresql:
+    enabled: true
+    postgresqlUsername: airflow
+    postgresqlPassword: airflow-password
+    postgresqlDatabase: airflow
+    primaryPersistence:
+      enabled: true
+      size: 10Gi
+    persistence:
+      enabled: true
+      size: 10Gi
+
+  redis:
+    enabled: true
+    master:
+      persistence:
+        enabled: true
+        size: 1Gi
+
+serviceAccount:
+  create: true
+  name: airflow-sa
+
+logs:
+  persistence:
+    enabled: true
+    storageClassName: "standard"  
+    size: 10Gi
+
+namespace: flow-alex
+
+persistence:
+  enabled: true
+  existingClaim: airflow-dag-pvc  
+  logs:
+    enabled: true
+    size: 10Gi
+    storageClassName: "standard"  

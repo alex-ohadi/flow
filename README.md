@@ -6,7 +6,7 @@
 
 ### Project Overview
 
-This project provides a Python-based map matcher that integrates with C++ functionality and runs in a Kubernetes environment.
+This project provides a Python-based map matcher that integrates with C++ functionality and runs in a Kubernetes environment. It also implements an Airflow job to restart the job at 12 UTC everyday.
 
 ---
 
@@ -35,13 +35,17 @@ This project provides a Python-based map matcher that integrates with C++ functi
 Install the following dependencies:
 
 ```bash
-brew install cmake              # for building the C++ file locally
-brew install pybind11           # for building the C++ file locally
-brew install nlohmann-json      # for building the C++ file locally
 brew install colima             # for running Docker locally on mac
 brew install docker             # for Docker
 brew install docker-compose     # for containerization
 brew install minikube           # for running K8s locally on mac
+brew install derailed/k9s/k9s
+```
+
+```bash
+brew install cmake              # *optional* for local building the C++ file locally
+brew install pybind11           # *optional* for local building the C++ file locally
+brew install nlohmann-json      # *optional* for local building the C++ file locally
 ```
 
 ### Install Kubernetes Guide
@@ -64,33 +68,57 @@ brew install derailed/k9s/k9s
 ### Start Kubernetes: Run with K8s
 
 1. **Start Minikube & Set Up Colima**:  
-   Run `colima start --memory 4` for Pulsar.  
-   Run `minikube start --driver=docker` (or for more resources: `minikube start --driver=docker --cpus=4 --memory=8192 --disk-size=20g`).
+   **Note**: it is important to start colima/minikube with enough cpus and memory, in order to get Pulsar and Airflow working.
+   Generally, the numbers set below should be enough for this setup, but adjust (raise/lower) depending on your Mac.
+   - Run `colima start --cpu 4 --memory 8` for Pulsar.
+   - Run `minikube start --driver=docker --cpus=2 --memory=7500`
+   - Run `eval $(minikube docker-env)` so you can use local docker images, avoids error image pullback error
 
-2. **Start K8s**:  
-   - First, stop Docker containers:  
-     `docker compose down -v`
 
-   - Then, deploy with K8s:  
+2. **Deploy Airflow** with helm
+  - `kubectl apply -f ./k8s/namespaces`
+  - `helm repo add apache-airflow https://airflow.apache.org && helm repo update`
+  - `helm install airflow apache-airflow/airflow -n flow-alex -f k8s/airflow-values.yml`
+  - Wait until airflow pods are up by checking `k9s` (did you install k9s? `brew install derailed/k9s/k9s`)
+  - While in `k9s`, if the namespace does not directly show up, type `ns`, press enter, then navigate to the "flow-alex" namespace
+
+3. **Start k8s manifests (deployments/configmaps/pvcs/etc)**:  
+  - Deploy the rest of our manifests with k8s:  
      `./start-as-k8s.sh`
+  - Monitor k9s, and wait for pulsar replicas to become ready
 
-3. **Monitor Pods** with `k9s`:  
-   - Watch the map-matcher job run after it connects to Pulsar (~2 minutes).
-   - View the logs and cron job with `kubectl get cronjob` or `kubectl get jobs`.
+4. **Start map-matcher job**
+  - This job will connect to pulsar and run the map-matcher python script, and will re-connect if it's not ready yet:
+   `kubectl create -f ./k8s/jobs/`
 
----
+5. To view the data in mongo after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the Mongo pod.
 
-#### MongoDB in K8s: View Data for Matched GPS Segments
-
-1. Run `k9s` and find the Mongo pod.
-2. Press `s` on the Mongo pod to enter its shell, then use Mongo Shell:
+6. Press `s` on the Mongo pod to enter its shell, then use Mongo Shell:
    ```bash
    mongosh
    use data
    db.datas.find()
    ```
 
----
+7. **Airflow web interface**
+  - Navigate to the web interface to view the airflow settings.
+  - In a seperate terminal: `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
+  - Navigate to `localhost:8080` and login with admin:admin
+
+8. **Copy in the DAG to restart the map-matcher job everyday 12 UTC**
+  - `kubectl cp ./k8s/k8s_dag.py flow-alex/airflow-worker-0:/opt/airflow/dags/`
+
+9. **Airflow web interface**
+  - Back in Airflow, view the DAGs tab.
+  - In a seperate terminal, use `k9s` and press [enter] on the airflow-worker-0 pod, and `s` into the worker.
+    Inside worker:
+    - `cd dags`
+    - run `airflow dags list-import-errors` press 'y' if asked to download new db
+    - Run `airflow scheduler`
+  - Refresh the dags folder to see the latest new DAG, if still no new DAG, re-run webserver `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
+  - View and Trigger the Dag
+
+
 
 ### Stop Kubernetes
 
@@ -102,7 +130,7 @@ To stop the Kubernetes deployment, use:
 ### *Optional* Start Docker: Run with docker
 
 1. **Start As docker containers**  
-   Run `colima start --memory 4` for Pulsar. 
+   Run `colima start --cpu 4 --memory 4` for Pulsar. 
    Run `docker volume create mongo_data_for_flow` to create mongo external volume
    Run `./start-docker-compose.sh`
 2. **Login to Mongodb**

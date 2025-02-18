@@ -117,7 +117,7 @@ def consume_gps_trace():
     return gps_trace_data
 
 # Load the edges data from JSON (road network)
-with open('edges.json', 'r') as edges_file:
+with open('edges2.json', 'r') as edges_file:
     edges_data = json.load(edges_file)
 
 # Convert edges to RoadSegment objects
@@ -138,7 +138,7 @@ for edge in edges_data:
 matcher = hmm_map_matcher.HMMMapMatcher(edges)
 
 # Load the events data from JSON (GPS traces)
-with open('events.json', 'r') as events_file:
+with open('events2.json', 'r') as events_file:
     events_data = json.load(events_file)
 
 # List to collect all matched segments
