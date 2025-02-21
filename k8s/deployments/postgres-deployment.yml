@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-alex-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-alex-flow
+  template:
+    metadata:
+      labels:
+        app: postgres-alex-flow
+    spec:
+      containers:
+        - name: postgres-map-matcher
+          image: flow-postgres-alex-flow:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: env
+          volumeMounts:
+            - name: postgres-init-script
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init-postgres.js
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data/
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      volumes:
+        - name: postgres-init-script  
+          configMap:
+            name: postgres-init-script
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc

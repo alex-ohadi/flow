@@ -3,9 +3,10 @@ import json
 import pulsar
 import time
 import sys
-import pymongo
 from datetime import datetime
-from pymongo import MongoClient
+import psycopg2
+from psycopg2 import sql
+
 
 # Add the build directory to sys.path
 sys.path.append(os.path.abspath('build'))
@@ -69,39 +70,37 @@ def create_consumer(client):
     print("🚨 Failed to create consumer after multiple attempts. Exiting.")
     exit(1)
 
-def connect_to_mongodb():
-    """ Establish connection to MongoDB with retries. """
-    mongo_user = os.getenv("data_username")
-    mongo_password = os.getenv("data_password")
-    mongo_host = "mongodb-map-matcher"
-    mongo_port = "27017"
+def connect_to_postgresql():
+    """ Establish connection to PostgreSQL with retries. """
+    postgres_user = os.getenv("PGUSER")
+    postgres_password = os.getenv("POSTGRES_PASSWORD")
+    postgres_host = os.getenv("POSTGRES_HOST") 
+    postgres_db = os.getenv("POSTGRES_DB", "data")
 
-    if not mongo_user or not mongo_password:
-        print("🚨 MongoDB username or password is missing from environment variables. Exiting.")
+    if not postgres_user or not postgres_password:
+        print("🚨 PostgreSQL username or password is missing from environment variables. Exiting.")
         exit(1)
 
-    mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/data"
-
+    connection_string = f"dbname={postgres_db} user={postgres_user} password={postgres_password} host={postgres_host}"
+    
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            print(f"Attempt {attempt}: Connecting to MongoDB...")
-            client = MongoClient(mongo_uri)
-            db = client["data"]
-            collection = db["datas"]
-            print("✅ Successfully connected to MongoDB!")
-            return collection
+            print(f"Attempt {attempt}: Connecting to PostgreSQL...")
+            connection = psycopg2.connect(connection_string)
+            cursor = connection.cursor()
+            print("✅ Successfully connected to PostgreSQL!")
+            return connection, cursor
         except Exception as e:
-            print(f"❌ MongoDB connection attempt {attempt} failed: {e}")
+            print(f"❌ PostgreSQL connection attempt {attempt} failed: {e}")
             time.sleep(DELAY_SECONDS)
-
-    print("🚨 Failed to connect to MongoDB after multiple attempts. Exiting.")
+    
+    print("🚨 Failed to connect to PostgreSQL after multiple attempts. Exiting.")
     exit(1)
-
 # Initialize connections
 pulsar_client = connect_to_pulsar()
 producer = create_producer(pulsar_client)
 consumer = create_consumer(pulsar_client)
-mongo_collection = connect_to_mongodb()
+postgres_connection, postgres_cursor = connect_to_postgresql()
 
 # Function to send a GPS trace to Pulsar
 def send_gps_trace(gps_trace_data):
@@ -180,22 +179,26 @@ document_to_insert = {
 }
 
 
-def insert_large_document_in_parts(mongo_collection, document):
-    # Split the document into smaller parts (for example, by list of matched segments)
-    part_size = 1000  # Adjust size to fit within BSON limit
+def insert_large_document_in_parts(cursor, connection, document):
+    """ Insert large document into PostgreSQL in parts. """
+    part_size = 1000 
     segments = document.get('matched_data', [])
     
-    # Insert each part separately
+    insert_query = sql.SQL("INSERT INTO datas (timestamp_utc, matched_data) VALUES (%s, %s)")
+
     for i in range(0, len(segments), part_size):
         part = {**document, 'matched_data': segments[i:i + part_size]}  # Split the segments
+        
         try:
-            mongo_collection.insert_one(part)
+            cursor.execute(insert_query, (part['timestamp_utc'], json.dumps(part['matched_data'])))
+            connection.commit()  # Commit after each part
             print(f"✅ Successfully inserted part {i//part_size + 1}.")
         except Exception as e:
+            connection.rollback()  # Rollback if there's an error
             print(f"🚨 Failed to insert part {i//part_size + 1}: {e}")
 
 # Call the function
-insert_large_document_in_parts(mongo_collection, document_to_insert)
+insert_large_document_in_parts(postgres_cursor, postgres_connection, document_to_insert)
 
 # Close Pulsar client connection
 pulsar_client.close()

@@ -1,23 +1,24 @@
 services:
-  mongodb-alex-flow:
-    container_name: mongodb-map-matcher
-    image: mongo:latest
+  postgres-alex-flow:
+    container_name: postgres-map-matcher
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
     platform: linux/arm64/v8  # Ensure ARM64 architecture for M1/M2 Macs
     restart: always
     env_file: ./.env
     ports:
-      - "27017:27017"
+      - "5432:5432"
     networks:
       - default
     volumes:
-      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
-      - mongo_data_for_flow:/data/db
-      - ./mongodb/mongod.conf:/etc/mongo/mongod.conf
-  
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      
   map-matcher-alex-flow:
     container_name: map-matcher-alex-flow
     depends_on:
-      - mongodb-alex-flow
+      - postgres-alex-flow
       - pulsar-alex-flow
     build:
       context: .

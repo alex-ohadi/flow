@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+data:
+  postgresql.conf: |
+      # File locations
+      data_directory = '/var/lib/postgresql/data'
+      hba_file = '/var/lib/postgresql/data/pg_hba.conf'
+      ident_file = '/var/lib/postgresql/data/pg_ident.conf'
+
+      # Connections
+      listen_addresses = '*'  
+      port = 5432
+      max_connections = 200
+      superuser_reserved_connections = 5
+      unix_socket_directories = '/var/run/postgresql'
+
+      # Memory & Performance
+      shared_buffers = 512MB  
+      work_mem = 16MB 
+      maintenance_work_mem = 128MB  
+      effective_cache_size = 1GB  
+
+      # Logging
+      logging_collector = on
+      log_destination = 'stderr'
+      log_directory = '/var/log/postgresql'
+      log_filename = 'postgresql-%Y-%m-%d.log'
+      log_truncate_on_rotation = on
+      log_rotation_age = 1d  
+      log_rotation_size = 100MB  
+      log_min_duration_statement = 500ms  
+      log_statement = 'all'  
+      log_duration = on
+      log_connections = on  
+      log_disconnections = on  
+      log_lock_waits = on 
+      log_temp_files = 0  
+      log_timezone = 'UTC'
+      log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+
+      # Checkpoints
+      checkpoint_timeout = 10min
+      checkpoint_completion_target = 0.9  

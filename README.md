@@ -72,7 +72,8 @@ brew install derailed/k9s/k9s
    Generally, the numbers set below should be enough for this setup, but adjust (raise/lower) depending on your Mac.
    - Run `colima start --cpu 4 --memory 8` for Pulsar.
    - Run `minikube start --driver=docker --cpus=2 --memory=7500`
-   - Run `eval $(minikube docker-env)` so you can use local docker images, avoids error image pullback error
+   - Run `minikube -p minikube docker-env` for docker images
+   - Run `eval $(minikube docker-env)` so you can use *local docker images*, avoids error image pullback error
 
 
 2. **Deploy Airflow** with helm
@@ -88,16 +89,15 @@ brew install derailed/k9s/k9s
   - Monitor k9s, and wait for pulsar replicas to become ready
 
 4. **Start map-matcher job**
-  - This job will connect to pulsar and run the map-matcher python script, and will re-connect if it's not ready yet:
+  - This job will connect to pulsar and run the map-matcher python script, and will continue to re-connect if it's not ready yet:
    `kubectl create -f ./k8s/jobs/`
 
-5. To view the data in mongo after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the Mongo pod.
+5. To view the data in postgres after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the postgres pod.
 
-6. Press `s` on the Mongo pod to enter its shell, then use Mongo Shell:
-   ```bash
-   mongosh
-   use data
-   db.datas.find()
+6. Press `s` on the postgres pod to enter its shell, then login to data db:
+   ``` bash
+   psql -U flow -d data
+   SELECT * FROM datas;
    ```
 
 7. **Airflow web interface**
@@ -119,6 +119,8 @@ brew install derailed/k9s/k9s
   - View and Trigger the Dag
 
 
+### Common errors
+1) If you build the images before running `eval $(minikube docker-env)` a docker image pullback issue might occur
 
 ### Stop Kubernetes
 
@@ -127,16 +129,18 @@ To stop the Kubernetes deployment, use:
 
 ---
 
+# Optional Debugging Guide:
+
 ### *Optional* Start Docker: Run with docker
 
 1. **Start As docker containers**  
    Run `colima start --cpu 4 --memory 4` for Pulsar. 
-   Run `docker volume create mongo_data_for_flow` to create mongo external volume
+   Run `docker volume create postgres_data_for_flow` to create postgres external volume
    Run `./start-docker-compose.sh`
-2. **Login to Mongodb**
+2. **Login to postgresdb**
    ```bash
-    docker exec -it <mongodb-container> sh
-   mongosh
+    docker exec -it <postgresdb-container> sh
+   postgressh
    use data
    db.datas.find()
    ```
@@ -145,7 +149,7 @@ To stop the Kubernetes deployment, use:
 ---
 
 
-### *Optional* Start local build for testing (no mongo or pulsar)
+### *Optional* Start local build for testing (no postgres or pulsar)
 - `cd flow/python/mapmatcher/`
 - `rm -rf build;`
 - `cmake -S . -B build -C CMakeLists-local.txt && make -C build` # uses local CMakeLists-local.txt
@@ -153,10 +157,10 @@ To stop the Kubernetes deployment, use:
 - `python3 map-matcher.py`
 
 
-### More Helpful MongoDB Commands
+### More Helpful postgresDB Commands
 
-- **Start Mongo Shell**:  
-  `mongosh`
+- **Start postgres Shell**:  
+  `postgressh`
 
 - **List Databases**:  
   `show databases`

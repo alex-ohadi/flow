@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-alex-flow
+spec:
+  selector:
+    app: postgres-alex-flow
+  ports:
+    - name: postgres-alex-flow
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP

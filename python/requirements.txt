@@ -1,2 +1,2 @@
 pulsar-client==2.10.1
-pymongo
+psycopg2-binary==2.9.3
