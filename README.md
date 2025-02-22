@@ -1,4 +1,4 @@
-# Python Map Matcher in K8s Deployment  
+# Python Map Matcher in K8s Deployment with Airflow 
 **Author**: Alex O  
 **Date**: Thurs, Feb 13 2025
 
@@ -18,15 +18,21 @@ This project provides a Python-based map matcher that integrates with C++ functi
 - **Map Matcher C++ File as Python Import**:  
   `flow/python/mapmatcher/mapmatcher.cpp`
 
-- **Docker Compose**:  
-  `flow/docker-compose.yml`
-
-- **Python Dockerfile for Pulsar Connection**:  
+- **Dockerfiles**:  
   `flow/python/Dockerfile`
+  `flow/postgres/Dockerfile`
 
 - **Kubernetes Deployment Files**:  
-  `flow/k8s`,  
+  `flow/k8s/deployments/`,  
   `flow/start-as-k8s.sh`
+  `flow/stop-as-k8s.sh`
+
+- **Airflow Values**
+  `flow/k8s/airflow-values`
+  `k8s_dag.py`
+
+- **Docker Compose**:  
+  `flow/docker-compose.yml`
 
 ---
 
@@ -92,12 +98,14 @@ brew install derailed/k9s/k9s
   - This job will connect to pulsar and run the map-matcher python script, and will continue to re-connect if it's not ready yet:
    `kubectl create -f ./k8s/jobs/`
 
-5. To view the data in postgres after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the postgres pod.
+5. To view the data in postgres after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the postgres pod, then press `[enter]` on the postgres pod to watch the logs in realtime
 
-6. Press `s` on the postgres pod to enter its shell, then login to data db:
+6. After everything has been sent to Postgres, view the data: Press `s` on the postgres pod to enter its shell:
    ``` bash
-   psql -U flow -d data
-   SELECT * FROM datas;
+    psql -U flow -d data
+    SELECT COUNT(*) FROM datas;
+    \pset pager off
+    SELECT * FROM datas LIMIT 10;
    ```
 
 7. **Airflow web interface**
@@ -106,21 +114,28 @@ brew install derailed/k9s/k9s
   - Navigate to `localhost:8080` and login with admin:admin
 
 8. **Copy in the DAG to restart the map-matcher job everyday 12 UTC**
+  - In a seperate terminal: `./k8s/update_dag.sh` # mount minikube
   - `kubectl cp ./k8s/k8s_dag.py flow-alex/airflow-worker-0:/opt/airflow/dags/`
 
 9. **Airflow web interface**
-  - Back in Airflow, view the DAGs tab.
+  - Back in Airflow, view the DAGs tab, it's common for the DAGs not to show up until the scheduler is run.
   - In a seperate terminal, use `k9s` and press [enter] on the airflow-worker-0 pod, and `s` into the worker.
     Inside worker:
-    - `cd dags`
-    - run `airflow dags list-import-errors` press 'y' if asked to download new db
-    - Run `airflow scheduler`
+    - Step 1) Go into the dags dir
+      - `cd dags`
+    - Step 2) Check errors with the DAG: 
+      - `airflow dags list-import-errors` 
+    - Step 3) Import the dag:
+      -  `airflow scheduler`
   - Refresh the dags folder to see the latest new DAG, if still no new DAG, re-run webserver `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
   - View and Trigger the Dag
 
 
 ### Common errors
 1) If you build the images before running `eval $(minikube docker-env)` a docker image pullback issue might occur
+2) Pulsar connection issues may happen due to increasing memory limits on colima and minikube
+   - Run `colima start --cpu 4 --memory 8` for Pulsar.
+   - Run `minikube start --driver=docker --cpus=2 --memory=7500`
 
 ### Stop Kubernetes
 
@@ -139,11 +154,12 @@ To stop the Kubernetes deployment, use:
    Run `./start-docker-compose.sh`
 2. **Login to postgresdb**
    ```bash
-    docker exec -it <postgresdb-container> sh
-   postgressh
-   use data
-   db.datas.find()
+    psql -U flow -d data
+    SELECT COUNT(*) FROM datas;
+    \pset pager off
+    SELECT * FROM datas LIMIT 10;
    ```
+
 3. **Stop Docker container**
    `docker compose down -v`
 ---
@@ -156,21 +172,9 @@ To stop the Kubernetes deployment, use:
 - `mv build/libhmm_map_matcher.so build/hmm_map_matcher.so`
 - `python3 map-matcher.py`
 
-
-### More Helpful postgresDB Commands
-
-- **Start postgres Shell**:  
-  `postgressh`
-
-- **List Databases**:  
-  `show databases`
-
-- **Use a Database**:  
-  `use <database>`
-
-- **Delete a Collection**:  
-  ```bash
-  use <database>
-  show collections
-  db.<collection>.drop()
-  ```
+### .env:
+PGUSER=flow
+POSTGRES_PASSWORD=flow-password
+POSTGRES_DB=data
+POSTGRES_USER=flow
+POSTGRES_HOST=postgres-alex-flow

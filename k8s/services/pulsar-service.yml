@@ -3,8 +3,9 @@ kind: Service
 metadata:
   name: pulsar-broker
 spec:
+  clusterIP: None 
   selector:
-    app: pulsar-alex-flow 
+    app: pulsar-alex-flow
   ports:
     - name: pulsar-broker
       protocol: TCP
@@ -14,4 +15,3 @@ spec:
       protocol: TCP
       port: 8080
       targetPort: 8080
-  type: ClusterIP

@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: pulsar-alex-flow
 spec:
-  replicas: 2
+  serviceName: "pulsar-broker"  # Service that governs the StatefulSet
+  replicas: 2  # Number of replicas (Pulsar brokers)
   selector:
     matchLabels:
       app: pulsar-alex-flow
@@ -39,19 +40,15 @@ spec:
             limits:
               cpu: "2"
               memory: "4Gi"
-          # readinessProbe:
-          #   tcpSocket:
-          #     port: 6650
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 10
-          #   failureThreshold: 5
-          # livenessProbe:
-          #   tcpSocket:
-          #     port: 8080
-          #   initialDelaySeconds: 15
-          #   periodSeconds: 20
-          #   failureThreshold: 3
           lifecycle:
             preStop:
               exec:
                 command: ["bin/pulsar-admin", "clusters", "delete", "standalone"]
+  volumeClaimTemplates:
+    - metadata:
+        name: pulsar-broker-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi  # Adjust the volume size as necessary

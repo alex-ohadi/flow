@@ -5,7 +5,7 @@ WORKDIR /app
 COPY python/requirements.txt .
 
 # For postgres
-RUN apt-get update && apt-get install -y libpq-dev
+RUN apt-get update && apt-get install -y libpq-dev gcc
 
 RUN pip install --no-cache-dir -r requirements.txt
 

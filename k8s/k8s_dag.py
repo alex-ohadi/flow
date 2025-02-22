@@ -1,7 +1,8 @@
+import os
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from kubernetes.client import V1VolumeMount, V1Volume
 from datetime import datetime
-import subprocess
 
 default_args = {
     "owner": "airflow",
@@ -9,13 +10,6 @@ default_args = {
     "start_date": datetime(2024, 1, 1),
     "retries": 1,
 }
-
-def run_k8s_job():
-    # Delete the existing job if it exists
-    subprocess.run(["kubectl", "delete", "job", "map-matcher"], check=False)
-    
-    # Now create the job again
-    subprocess.run(["kubectl", "create", "-f", "./k8s/jobs/map-matcher.yaml"], check=True)
 
 # Define DAG
 dag = DAG(
@@ -25,11 +19,45 @@ dag = DAG(
     catchup=False,
 )
 
-# Define Python task to run the map matcher job
-run_k8s_job_task = PythonOperator(
-    task_id="run_map_matcher",
-    python_callable=run_k8s_job,
+# Define the volume for the job directory
+volume = V1Volume(
+    name="dags-volume",
+    host_path={"path": "/mnt/data", "type": "Directory"}  # Corrected path inside Minikube
+)
+# Define the volume mount for the job directory inside the pod
+volume_mount = V1VolumeMount(
+    mount_path="/opt/airflow/dags/k8s/jobs",  # Path in the pod where the job will be mounted
+    name="dags-volume",  # The name of the volume
+    read_only=False  # Allow write access if needed (set this to True if no writing is needed)
+)
+
+# Define KubernetesPodOperator to delete the job using kubectl
+delete_job_task = KubernetesPodOperator(
+    task_id="delete_map_matcher_job",
+    name="delete-map-matcher-job",
+    namespace="flow-alex",  # Specify your namespace
+    image="bitnami/kubectl",  # Image with kubectl installed
+    cmds=["kubectl", "delete", "job", "map-matcher"],
+    is_delete_operator_pod=True,
+    get_logs=True,
+    volumes=[volume],  # Use the volume here
+    volume_mounts=[volume_mount],  # Use the volume mount here
     dag=dag,
 )
 
-run_k8s_job_task
+# Define KubernetesPodOperator to create the job using kubectl
+create_job_task = KubernetesPodOperator(
+    task_id="create_map_matcher_job",
+    name="create-map-matcher-job",
+    namespace="flow-alex",  # Specify your namespace
+    image="bitnami/kubectl",  # Image with kubectl installed
+    cmds=["kubectl", "create", "-f", "/opt/airflow/dags/k8s/jobs/map-matcher-job.yml"],
+    is_delete_operator_pod=True,
+    get_logs=True,
+    volumes=[volume],  # Use the volume here
+    volume_mounts=[volume_mount],  # Use the volume mount here
+    dag=dag,
+)
+
+# Task dependencies: delete job first, then create it
+delete_job_task >> create_job_task
