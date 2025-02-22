@@ -1,22 +1,23 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: flow-alex  # Your correct namespace
+  namespace: flow-alex
   name: airflow-role
 rules:
   - apiGroups: [""]
     resources: ["pods", "jobs"]
-    verbs: ["get", "list", "create", "delete"]  # Necessary verbs for managing pods and jobs
+    verbs: ["get", "list", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: airflow-role-binding
-  namespace: flow-alex  # Your correct namespace
+  namespace: flow-alex
 subjects:
   - kind: ServiceAccount
-    name: airflow-worker  # Service account for Airflow worker
-    namespace: flow-alex  # Namespace where the service account resides
+    name: airflow-worker
+    namespace: flow-alex
 roleRef:
   kind: Role
   name: airflow-role
@@ -26,22 +27,37 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: flow-alex
-  name: job-deletion-role
+  name: job-creation-deletion-role
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["delete"]
+    verbs: ["create", "delete"]  # Added create permission for jobs
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: job-deletion-role-binding
-  namespace: flow-alex  # Your correct namespace
+  name: job-creation-deletion-role-binding
+  namespace: flow-alex
 subjects:
   - kind: ServiceAccount
-    name: airflow-worker  # The same service account for Airflow worker
-    namespace: flow-alex  # Namespace where the service account resides
+    name: airflow-worker
+    namespace: flow-alex
 roleRef:
   kind: Role
-  name: job-deletion-role
+  name: job-creation-deletion-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Optional: RoleBinding for default service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default-role-binding
+  namespace: flow-alex
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: flow-alex
+roleRef:
+  kind: Role
+  name: job-creation-deletion-role
   apiGroup: rbac.authorization.k8s.io
