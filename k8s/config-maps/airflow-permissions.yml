@@ -1,0 +1,63 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: flow-alex
+  name: airflow-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "jobs"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: airflow-role-binding
+  namespace: flow-alex
+subjects:
+  - kind: ServiceAccount
+    name: airflow-worker
+    namespace: flow-alex
+roleRef:
+  kind: Role
+  name: airflow-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: flow-alex
+  name: job-creation-deletion-role
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "delete"]  # Added create permission for jobs
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-creation-deletion-role-binding
+  namespace: flow-alex
+subjects:
+  - kind: ServiceAccount
+    name: airflow-worker
+    namespace: flow-alex
+roleRef:
+  kind: Role
+  name: job-creation-deletion-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Optional: RoleBinding for default service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default-role-binding
+  namespace: flow-alex
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: flow-alex
+roleRef:
+  kind: Role
+  name: job-creation-deletion-role
+  apiGroup: rbac.authorization.k8s.io

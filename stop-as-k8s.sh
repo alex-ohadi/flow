@@ -7,8 +7,7 @@ cd k8s
 echo "** Deleting the jobs first to ensure no running workloads **"
 kubectl delete -f ./jobs --ignore-not-found=true
 
-echo "** Deleting statefulsets and deployments (workloads) **"
-kubectl delete -f ./statefulset --ignore-not-found=true
+echo "** Deleting deployments **"
 kubectl delete -f ./deployments --ignore-not-found=true
 
 echo "** Waiting for Deployments to be fully deleted **"
