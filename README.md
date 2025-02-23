@@ -131,14 +131,19 @@ brew install derailed/k9s/k9s
     - Step 6) Watch in `k9s`, as the map-matcher job gets recreated (runs delete/create on the job)
 
 
-![Alt text](instructions/terminals.png?raw=true "Open terminals handling setup")
+![k9s](instructions/terminals.png?raw=true "Open terminals handling setup")
 
-![Alt text](instructions/airflow.png?raw=true "Airflow")
+![Airflow](instructions/airflow.png?raw=true "Airflow")
 
-![Alt text](instructions/GPStraces.png?raw=true "GPS")
+![GPS](instructions/GPStraces.png?raw=true "GPS")
 
-![Alt text](instructions/Pulsar.png?raw=true "Pulsar")
+![Pulsar](instructions/Pulsar.png?raw=true "Pulsar")
 
+![Insert](instructions/Insert.png?raw=true "Insert")
+
+![PG1](instructions/pg1.png?raw=true "PG1")
+
+![PG2](instructions/pg2.png?raw=true "PG2")
 
 
 ### Common errors
