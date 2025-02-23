@@ -79,15 +79,16 @@ brew install derailed/k9s/k9s
    - Run `colima start --cpu 4 --memory 8` for Pulsar.
    - Run `minikube start --driver=docker --cpus=2 --memory=7500`
    - Run `minikube -p minikube docker-env` for docker images
-   - Run `eval $(minikube docker-env)` so you can use *local docker images*, avoids error image pullback error
+   - Run `eval $(minikube -p minikube docker-env)` so you can use *local docker images*, avoids error image pullback error
 
 
 2. **Deploy Airflow** with helm
   - `kubectl apply -f ./k8s/namespaces`
   - `helm repo add apache-airflow https://airflow.apache.org && helm repo update`
   - `helm install airflow apache-airflow/airflow -n flow-alex -f k8s/airflow-values.yml`
-  - Wait until airflow pods are up by checking `k9s` (did you install k9s? `brew install derailed/k9s/k9s`)
-  - While in `k9s`, if the namespace does not directly show up, type `ns`, press enter, then navigate to the "flow-alex" namespace
+  - *in a seperate terminal* `k9s`
+  Wait until airflow pods are up by checking `k9s` (did you install k9s? `brew install derailed/k9s/k9s`)
+  While in `k9s`, if the namespace does not directly show up, type `ns`, press enter, then navigate to the "flow-alex" namespace
 
 3. **Start k8s manifests (deployments/configmaps/pvcs/etc)**:  
   - Deploy the rest of our manifests with k8s:  
@@ -98,37 +99,39 @@ brew install derailed/k9s/k9s
   - This job will connect to pulsar and run the map-matcher python script, and will continue to re-connect if it's not ready yet:
    `kubectl create -f ./k8s/jobs/`
 
-5. To view the data in postgres after the map-matcher job runs (by checking logs of map-matcher), run `k9s` and find the postgres pod, then press `[enter]` on the postgres pod to watch the logs in realtime
-
-6. After everything has been sent to Postgres, view the data: Press `s` on the postgres pod to enter its shell:
+5. Once the map-matcher job shows completed (~2min), go back into your `k9s` terminal you opened in an earlier step,  to view the data in postgres after the map-matcher job runs (by checking logs of map-matcher) and find the postgres pod, then view the data by pressing `s` on the postgres pod to enter its shell, then from there you can interact with the database like so:
    ``` bash
-    psql -U flow -d data
-    SELECT COUNT(*) FROM datas;
-    \pset pager off
-    SELECT * FROM datas LIMIT 10;
+    `psql -U flow -d data` # Select the database
+    `SELECT COUNT(*) FROM datas;` # Show how many rows (show show 131 rows)
+    `\pset pager off` # turn off pager
+     `SELECT * FROM datas LIMIT 10; # Show the row data
    ```
 
 7. **Airflow web interface**
   - Navigate to the web interface to view the airflow settings.
-  - In a seperate terminal: `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
-  - Navigate to `localhost:8080` and login with admin:admin
+  - *In another seperate terminal*: `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
+  - In a browser, navigate to `localhost:8080` and login with admin:admin
 
 8. **Copy in the DAG to restart the map-matcher job everyday 12 UTC**
-  - In a seperate terminal: `./k8s/update_dag.sh` # mount minikube
+  - *In another seperate terminal*: `./k8s/update_dag.sh` # mount minikube
   - `kubectl cp ./k8s/k8s_dag.py flow-alex/airflow-worker-0:/opt/airflow/dags/`
 
 9. **Airflow web interface**
-  - Back in Airflow, view the DAGs tab, it's common for the DAGs not to show up until the scheduler is run.
-  - In a seperate terminal, use `k9s` and press [enter] on the airflow-worker-0 pod, and `s` into the worker.
+  - In the the `k9s` terminal you opened in an earlier step, press [enter] on the airflow-worker-0 pod, and `s` into the worker.
     Inside worker:
     - Step 1) Go into the dags dir
       - `cd dags`
     - Step 2) Check errors with the DAG: 
       - `airflow dags list-import-errors` 
-    - Step 3) Import the dag:
+    - Step 3) Import the dag, this command will keep terminal open:
       -  `airflow scheduler`
-  - Refresh the dags folder to see the latest new DAG, if still no new DAG, re-run webserver `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
-  - View and Trigger the Dag
+    - Step 4) Refresh the dags folder in the web interface.
+        - Debugging step: If still no new DAG, re-run webserver `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
+    - Step 5) View and Trigger the Dag, by finding the map-matcher DAG, and pressing play
+    - Step 6) Watch in `k9s`, as the map-matcher job gets recreated (runs delete/create on the job)
+
+
+![Alt text](instructions/terminals.png?raw=true "Open terminals handling setup")
 
 
 ### Common errors
