@@ -133,6 +133,13 @@ brew install derailed/k9s/k9s
 
 ![Alt text](instructions/terminals.png?raw=true "Open terminals handling setup")
 
+![Alt text](instructions/airflow.png?raw=true "Airflow")
+
+![Alt text](instructions/GPStraces.png?raw=true "GPS")
+
+![Alt text](instructions/Pulsar.png?raw=true "Pulsar")
+
+
 
 ### Common errors
 1) If you build the images before running `eval $(minikube docker-env)` a docker image pullback issue might occur
