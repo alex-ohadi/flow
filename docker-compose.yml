@@ -24,8 +24,20 @@ services:
       context: .
       dockerfile: python/Dockerfile
     env_file: ./.env
-    ports:
-      - "6660:6650" 
+    restart: always
+    networks:
+      - default
+
+
+  pulsar-alex-consumer:
+    container_name: pulsar-alex-consumer
+    depends_on:
+      - postgres-alex-flow
+      - pulsar-alex-flow
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    env_file: ./.env
     restart: always
     networks:
       - default

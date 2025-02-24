@@ -32,11 +32,11 @@ spec:
               mountPath: /var/lib/postgresql/data/
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              cpu: "1" 
+              memory: "1.5Gi" # or 512Mi
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              cpu: "2"
+              memory: "1.5Gi"
       volumes:
         - name: postgres-init-script  
           configMap:

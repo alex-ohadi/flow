@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-alex-consumer
+  labels:
+    app: pulsar-alex-consumer
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: pulsar-alex-consumer
+  template:
+    metadata:
+      labels:
+        app: pulsar-alex-consumer
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: pulsar-alex-consumer
+          image: flow-pulsar-alex-consumer:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: env
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "3Gi" # or 1Gi if needed
+            limits:
+              cpu: "500m"
+              memory: "3Gi" # or 1.5Gi 

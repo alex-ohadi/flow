@@ -76,8 +76,13 @@ brew install derailed/k9s/k9s
 1. **Start Minikube & Set Up Colima**:  
    **Note**: it is important to start colima/minikube with enough cpus and memory, in order to get Pulsar and Airflow working.
    Generally, the numbers set below should be enough for this setup, but adjust (raise/lower) depending on your Mac.
-   - Run `colima start --cpu 4 --memory 8` for Pulsar.
-   - Run `minikube start --driver=docker --cpus=2 --memory=7500`
+       
+       # *PREFERED* 
+       # Mac M4 with 16GB of ram consideration: 
+       - Run `colima start --cpu 4 --memory 12` for Pulsar.    
+       - Run `minikube start --driver=docker --cpus=4 --memory=11000`
+
+
    - Run `minikube -p minikube docker-env` for docker images
    - Run `eval $(minikube -p minikube docker-env)` so you can use *local docker images*, avoids error image pullback error
 
@@ -95,9 +100,9 @@ brew install derailed/k9s/k9s
      `./start-as-k8s.sh`
   - Monitor k9s, and wait for pulsar replicas to become ready
 
-4. **Start map-matcher job**
+4. **Start map-matcher job & consumer**
   - This job will connect to pulsar and run the map-matcher python script, and will continue to re-connect if it's not ready yet:
-   `kubectl create -f ./k8s/jobs/`
+   `kubectl apply -f ./k8s/jobs/`
 
 5. Once the map-matcher job shows completed (~2min), go back into your `k9s` terminal you opened in an earlier step,  to view the data in postgres after the map-matcher job runs (by checking logs of map-matcher) and find the postgres pod, then view the data by pressing `s` on the postgres pod to enter its shell, then from there you can interact with the database like so:
    ``` bash

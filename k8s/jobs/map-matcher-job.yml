@@ -1,22 +1,26 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: map-matcher 
+  name: map-matcher
 spec:
-  backoffLimit: 0
-  ttlSecondsAfterFinished: 3600  
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600  # Job will be deleted 1 hour after completion
   template:
     metadata:
       labels:
         app: map-matcher
     spec:
-      restartPolicy: Never
+      restartPolicy: OnFailure
       containers:
         - name: map-matcher
           image: flow-map-matcher-alex-flow:latest
           imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: env
           ports:
             - containerPort: 6650
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi" # or 1Gi if needed
+            limits:
+              cpu: "500m"
+              memory: "2Gi" # or 1.5Gi 

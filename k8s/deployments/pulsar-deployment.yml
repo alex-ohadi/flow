@@ -35,11 +35,11 @@ spec:
               value: "30"
           resources:
             requests:
-              cpu: "500m"
-              memory: "2Gi"
+              cpu: "500m" # or 500m if needed
+              memory: "2Gi" # or 1.5Gi if needed
             limits:
               cpu: "2"
-              memory: "4Gi"
+              memory: "2Gi"
           lifecycle:
             preStop:
               exec:
