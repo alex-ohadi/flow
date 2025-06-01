@@ -153,13 +153,17 @@ all_matched_segments = []
 
 # Send the GPS traces to Pulsar
 logging.info("Creating gps trace data...")
+
 for event in events_data:
-    gps_trace_data = {
-        "lat": event["lat"],
-        "lon": event["lon"],
-        "timestamp": event["timestamp"]
-    }
-    send_gps_trace(gps_trace_data)
+    journey_data = []
+    for journey_id in events_data:
+        if(event["journey_id"] == journey_id["journey_id"])
+            gps_trace_data = {
+                "lat": event["lat"],
+                "lon": event["lon"],
+                "timestamp": event["timestamp"]
+            }
+            send_gps_trace(gps_trace_data)
 
 # Consume and map-match the GPS traces
 logging.info("Consuming and map-matching the GPS traces...")
