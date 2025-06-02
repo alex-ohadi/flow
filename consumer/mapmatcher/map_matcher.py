@@ -48,6 +48,7 @@ def create_consumer(client):
             consumer = client.subscribe(
                 'persistent://public/default/gps-traces',
                 subscription_name='gps-trace-subscription'
+                subscription_type=pulsar.SubscriptionType.Shared
             )
             logging.info("✅ Successfully created consumer!")
             return consumer

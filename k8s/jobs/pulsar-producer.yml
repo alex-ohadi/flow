@@ -1,20 +1,16 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: pulsar-alex-consumer
-  labels:
-    app: pulsar-alex-consumer
+  name: map-matcher
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: pulsar-alex-consumer
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600  # Job will be deleted 1 hour after completion
   template:
     metadata:
       labels:
-        app: pulsar-alex-consumer
+        app: map-matcher
     spec:
-      restartPolicy: Always
+      restartPolicy: OnFailure
       initContainers:
         - name: wait-for-pulsar
           image: curlimages/curl:7.85.0
@@ -27,16 +23,15 @@ spec:
                 sleep 5
               done
       containers:
-        - name: pulsar-alex-consumer
-          image: flow-pulsar-alex-consumer:latest
+        - name: map-matcher
+          image: flow-map-matcher-alex-flow:latest
           imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: env
+          ports:
+            - containerPort: 6650
           # resources:
           #   requests:
           #     cpu: "500m"
-          #     memory: "3Gi" # or 1Gi if needed
+          #     memory: "2Gi" # or 1Gi if needed
           #   limits:
           #     cpu: "500m"
-          #     memory: "3Gi" # or 1.5Gi
+          #     memory: "2Gi" # or 1.5Gi

@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY python/requirements.txt .
+COPY producer/requirements.txt .
 
 # For postgres
 
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     libpython3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app/python/mapmatcher
+WORKDIR /app/producer/mapmatcher
 
 EXPOSE 6650
 

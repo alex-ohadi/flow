@@ -30,13 +30,13 @@ spec:
               subPath: postgresql.conf
             - name: postgres-data
               mountPath: /var/lib/postgresql/data/
-          resources:
-            requests:
-              cpu: "1" 
-              memory: "1.5Gi" # or 512Mi
-            limits:
-              cpu: "2"
-              memory: "1.5Gi"
+          # resources:
+          #   requests:
+          #     cpu: "1" 
+          #     memory: "1.5Gi" # or 512Mi
+          #   limits:
+          #     cpu: "2"
+          #     memory: "1.5Gi"
       volumes:
         - name: postgres-init-script  
           configMap:

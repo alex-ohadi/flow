@@ -5,21 +5,21 @@
 ---
 
 ### Project Overview
+This project is a map matching system that uses Python and C++ to process GPS data accurately. It runs in Kubernetes with Apache Pulsar handling messaging. A producer sends GPS events to Pulsar, and three consumer pods listen and run the map matching on the data. This setup allows fast, reliable, and scalable processing of GPS traces.
 
-This project provides a Python-based map matcher that integrates with C++ functionality and runs in a Kubernetes environment. It also implements an Airflow job to restart the job at 12 UTC everyday.
 
 ---
 
 ### Key Files
 
 - **Map Matcher Python Script**:  
-  `flow/python/mapmatcher/map_matcher.py`
+  `flow/producer/mapmatcher/map_matcher.py`
 
 - **Map Matcher C++ File as Python Import**:  
-  `flow/python/mapmatcher/mapmatcher.cpp`
+  `flow/producer/mapmatcher/mapmatcher.cpp`
 
 - **Dockerfiles**:  
-  `flow/python/Dockerfile`
+  `flow/producer/Dockerfile`
   `flow/postgres/Dockerfile`
 
 - **Kubernetes Deployment Files**:  
@@ -89,10 +89,6 @@ brew install derailed/k9s/k9s
 
 2. **Deploy Airflow** with helm
   - `kubectl apply -f ./k8s/namespaces`
-  - `helm repo add apache-airflow https://airflow.apache.org && helm repo update`
-  - `helm install airflow apache-airflow/airflow -n flow-alex -f k8s/airflow-values.yml`
-  - *in a seperate terminal* `k9s`
-  Wait until airflow pods are up by checking `k9s` (did you install k9s? `brew install derailed/k9s/k9s`)
   While in `k9s`, if the namespace does not directly show up, type `ns`, press enter, then navigate to the "flow-alex" namespace
 
 3. **Start k8s manifests (deployments/configmaps/pvcs/etc)**:  
@@ -111,30 +107,6 @@ brew install derailed/k9s/k9s
     `\pset pager off` # turn off pager
      `SELECT * FROM datas LIMIT 10; # Show the row data
    ```
-
-7. **Airflow web interface**
-  - Navigate to the web interface to view the airflow settings.
-  - *In another seperate terminal*: `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
-  - In a browser, navigate to `localhost:8080` and login with admin:admin
-
-8. **Copy in the DAG to restart the map-matcher job everyday 12 UTC**
-  - *In another seperate terminal*: `./k8s/update_dag.sh` # mount minikube
-  - `kubectl cp ./k8s/k8s_dag.py flow-alex/airflow-worker-0:/opt/airflow/dags/`
-
-9. **Airflow web interface**
-  - In the the `k9s` terminal you opened in an earlier step, press [enter] on the airflow-worker-0 pod, and `s` into the worker.
-    Inside worker:
-    - Step 1) Go into the dags dir
-      - `cd dags`
-    - Step 2) Check errors with the DAG: 
-      - `airflow dags list-import-errors` 
-    - Step 3) Import the dag, this command will keep terminal open:
-      -  `airflow scheduler`
-    - Step 4) Refresh the dags folder in the web interface.
-        - Debugging step: If still no new DAG, re-run webserver `kubectl port-forward svc/airflow-webserver 8080:8080 -n flow-alex`
-    - Step 5) View and Trigger the Dag, by finding the map-matcher DAG, and pressing play
-    - Step 6) Watch in `k9s`, as the map-matcher job gets recreated (runs delete/create on the job)
-
 
 ![k9s](instructions/terminals.png?raw=true "Open terminals handling setup")
 
@@ -157,40 +129,13 @@ brew install derailed/k9s/k9s
    - Run `colima start --cpu 4 --memory 8` for Pulsar.
    - Run `minikube start --driver=docker --cpus=2 --memory=7500`
 
+3) Kill namespace stuck in terminating:
+`kubectl get namespace flow-alex -o json | jq 'del(.spec.finalizers)' | kubectl replace --raw "/api/v1/namespaces/flow-alex/finalize" -f -`
+
 ### Stop Kubernetes
 
 To stop the Kubernetes deployment, use:  
 `./stop-as-k8s.sh`
-
----
-
-# Optional Debugging Guide:
-
-### *Optional* Start Docker: Run with docker
-
-1. **Start As docker containers**  
-   Run `colima start --cpu 4 --memory 4` for Pulsar. 
-   Run `docker volume create postgres_data_for_flow` to create postgres external volume
-   Run `./start-docker-compose.sh`
-2. **Login to postgresdb**
-   ```bash
-    psql -U flow -d data
-    SELECT COUNT(*) FROM datas;
-    \pset pager off
-    SELECT * FROM datas LIMIT 10;
-   ```
-
-3. **Stop Docker container**
-   `docker compose down -v`
----
-
-
-### *Optional* Start local build for testing (no postgres or pulsar)
-- `cd flow/python/mapmatcher/`
-- `rm -rf build;`
-- `cmake -S . -B build -C CMakeLists-local.txt && make -C build` # uses local CMakeLists-local.txt
-- `mv build/libhmm_map_matcher.so build/hmm_map_matcher.so`
-- `python3 map-matcher.py`
 
 ### .env:
 PGUSER=flow

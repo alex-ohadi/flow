@@ -3,8 +3,8 @@ kind: StatefulSet
 metadata:
   name: pulsar-alex-flow
 spec:
-  serviceName: "pulsar-broker"  # Service that governs the StatefulSet
-  replicas: 2  # Number of replicas (Pulsar brokers)
+  serviceName: "pulsar-broker"
+  replicas: 1
   selector:
     matchLabels:
       app: pulsar-alex-flow
@@ -19,8 +19,8 @@ spec:
           imagePullPolicy: Always
           command: ["bash", "-c", "bin/pulsar standalone"]
           ports:
-            - containerPort: 6650  # Pulsar binary protocol
-            - containerPort: 8080  # Pulsar HTTP API
+            - containerPort: 6650
+            - containerPort: 8080
           envFrom:
             - secretRef:
                 name: env
@@ -33,13 +33,15 @@ spec:
               value: "30000"
             - name: PULSAR_CLIENT_KEEPALIVE_INTERVAL_SECONDS
               value: "30"
-          resources:
-            requests:
-              cpu: "500m" # or 500m if needed
-              memory: "2Gi" # or 1.5Gi if needed
-            limits:
-              cpu: "2"
-              memory: "2Gi"
+          readinessProbe:
+            httpGet:
+              path: /admin/v2/brokers/health
+              port: 8080
+            initialDelaySeconds: 140
+            periodSeconds: 10
+            timeoutSeconds: 15
+            failureThreshold: 10
+            successThreshold: 1
           lifecycle:
             preStop:
               exec:
@@ -48,7 +50,8 @@ spec:
     - metadata:
         name: pulsar-broker-storage
       spec:
+        storageClassName: standard
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 10Gi  # Adjust the volume size as necessary
+            storage: 10Gi

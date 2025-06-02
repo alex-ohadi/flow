@@ -5,7 +5,7 @@ echo "** Starting as k8s **"
 docker image prune -f
 
 echo "** Build map matcher image **"
-docker compose -f docker-compose.yml build --no-cache;
+docker compose -f docker-compose.yml build
 
 echo "** Let minikube know where the docker images are coming ** "
 eval $(minikube docker-env)
@@ -24,9 +24,9 @@ kubectl create secret generic env --from-env-file=../.env
 
 
 echo "** Apply the configmaps, services, claims, deployments, and statefulset for the K8s manifests **"
+kubectl apply -f ./persistant-volume-claims
 kubectl apply -f ./config-maps
 kubectl apply -f ./services
-kubectl apply -f ./persistant-volume-claims
 kubectl apply -f ./deployments
 
 sleep 2
