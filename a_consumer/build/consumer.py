@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),              # logs to stdout
+        logging.StreamHandler(sys.stdout),      # logs to stdout
         logging.FileHandler('/app/a_consumer/build/consumer.log')  # logs to file inside container
     ]
 )
