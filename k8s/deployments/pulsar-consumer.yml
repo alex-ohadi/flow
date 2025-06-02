@@ -5,7 +5,7 @@ metadata:
   labels:
     app: pulsar-alex-consumer
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: pulsar-alex-consumer
@@ -22,14 +22,14 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf http://pulsar-broker:8080/admin/v2/brokers/health; do
+              until curl -sf http://my-pulsar-broker:8080/admin/v2/brokers/health; do
                 echo "Waiting for Pulsar broker..."
                 sleep 5
               done
       containers:
         - name: pulsar-alex-consumer
-          image: flow-pulsar-alex-consumer:latest
-          imagePullPolicy: IfNotPresent
+          image: pulsar-alex-consumer:latest
+          imagePullPolicy: Never
           envFrom:
             - secretRef:
                 name: env

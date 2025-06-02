@@ -6,7 +6,14 @@ import logging
 import sys
 
 # Set up logging
-logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),              # logs to stdout
+        logging.FileHandler('/app/a_producer/build/producer.log')  # logs to file inside container
+    ]
+)
 
 # Max retries and delay settings
 MAX_RETRIES = 20
@@ -17,7 +24,7 @@ def connect_to_pulsar():
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             logging.info(f"Attempt {attempt}: Connecting to Pulsar broker...")
-            pulsar_client = pulsar.Client('pulsar://pulsar-broker:6650', operation_timeout_seconds=30)
+            pulsar_client = pulsar.Client('pulsar://my-pulsar-broker:6650', operation_timeout_seconds=30)
             logging.info("✅ Successfully connected to Pulsar client!")
             return pulsar_client
         except Exception as e:

@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: map-matcher
+  name: pulsar-alex-producer
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 3600  # Job will be deleted 1 hour after completion
+  # ttlSecondsAfterFinished: 3600  # Job will be deleted 1 hour after completion
   template:
     metadata:
       labels:
-        app: map-matcher
+        app: pulsar-alex-producer
     spec:
       restartPolicy: OnFailure
       initContainers:
@@ -18,14 +18,14 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf http://pulsar-broker:8080/admin/v2/brokers/health; do
+              until curl -sf http://my-pulsar-broker:8080/admin/v2/brokers/health; do
                 echo "Waiting for Pulsar broker..."
                 sleep 5
               done
       containers:
-        - name: map-matcher
-          image: flow-map-matcher-alex-flow:latest
-          imagePullPolicy: IfNotPresent
+        - name: pulsar-alex-producer
+          image: pulsar-alex-producer:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 6650
           # resources:

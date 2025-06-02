@@ -87,7 +87,7 @@ brew install derailed/k9s/k9s
    - Run `eval $(minikube -p minikube docker-env)` so you can use *local docker images*, avoids error image pullback error
 
 
-2. **Deploy Airflow** with helm
+2. **Apply Namespace** 
   - `kubectl apply -f ./k8s/namespaces`
   While in `k9s`, if the namespace does not directly show up, type `ns`, press enter, then navigate to the "flow-alex" namespace
 
@@ -142,4 +142,4 @@ PGUSER=flow
 POSTGRES_PASSWORD=flow-password
 POSTGRES_DB=data
 POSTGRES_USER=flow
-POSTGRES_HOST=postgres-alex-flow
+POSTGRES_HOST=pulsar-alex-postgres

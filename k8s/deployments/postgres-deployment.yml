@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres-alex-flow
+  name: pulsar-alex-postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres-alex-flow
+      app: pulsar-alex-postgres
   template:
     metadata:
       labels:
-        app: postgres-alex-flow
+        app: pulsar-alex-postgres
     spec:
       containers:
-        - name: postgres-map-matcher
-          image: flow-postgres-alex-flow:latest
-          imagePullPolicy: IfNotPresent
+        - name: pulsar-alex-postgres
+          image: pulsar-alex-postgres:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 5432
           envFrom:

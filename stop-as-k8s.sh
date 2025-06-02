@@ -13,8 +13,8 @@ kubectl delete -f ./deployments --ignore-not-found=true
 echo "** Waiting for Deployments to be fully deleted **"
 kubectl wait --for=delete deployment --all --timeout=60s
 
-echo "** Stop airflow **"
-helm uninstall airflow -n flow-alex
+echo "** Stop pulsar helm **"
+helm uninstall my-pulsar -n flow-alex
 
 echo "** Deleting persistent volume claims (PVCs) **"
 kubectl delete -f ./persistant-volume-claims --ignore-not-found=true

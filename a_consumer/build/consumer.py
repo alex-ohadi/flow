@@ -1,6 +1,6 @@
 import os
 import json
-import pulsar
+from pulsar import Client, ConsumerType
 import time
 import sys
 from datetime import datetime
@@ -9,8 +9,14 @@ from psycopg2 import sql
 import logging
 
 # Set up logging
-logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(message)s')
-
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),              # logs to stdout
+        logging.FileHandler('/app/a_consumer/build/consumer.log')  # logs to file inside container
+    ]
+)
 # Add the build directory to sys.path
 sys.path.append(os.path.abspath('build'))
 
@@ -30,7 +36,7 @@ def connect_to_pulsar():
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             logging.info(f"Attempt {attempt}: Connecting to Pulsar broker...")
-            pulsar_client = pulsar.Client('pulsar://pulsar-broker:6650', operation_timeout_seconds=30)
+            pulsar_client = Client('pulsar://my-pulsar-broker:6650', operation_timeout_seconds=30)
             logging.info("✅ Successfully connected to Pulsar client!")
             return pulsar_client
         except Exception as e:
@@ -44,11 +50,11 @@ def create_consumer(client):
     """ Attempt to create a consumer with retries and logging. """
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            logging.info(f"Attempt {attempt}: Creating consumer...")
+            logging.info(f"Attempt {attempt}: Creating consumer connection...")
             consumer = client.subscribe(
                 'persistent://public/default/gps-traces',
-                subscription_name='gps-trace-subscription'
-                subscription_type=pulsar.SubscriptionType.Shared
+                subscription_name='gps-trace-subscription',
+                consumer_type=ConsumerType.Shared
             )
             logging.info("✅ Successfully created consumer!")
             return consumer
@@ -111,36 +117,46 @@ for edge in edges_data:
     road_segment.coordinates = coordinates
     edges.append(road_segment)
 
-# Initialize the map matcher
+# Initialize the map matcher with the road segment objects just created
 logging.info("Initializing the map matcher...")
 matcher = hmm_map_matcher.HMMMapMatcher(edges)
 
 # Continuous message consumption
 logging.info("Starting consumer loop...")
+
 while True:
-    logging.info("Receiving messages from consumer..")
-    msg = consumer.receive(timeout_millis=5000)
+    msg = None
     try:
-        received_trace = json.loads(msg.data().decode('utf-8'))
-        logging.info(f"📥 Received GPS trace: {received_trace}")
+      logging.info("Consumer is waiting for messages...")
+      msg = consumer.receive()
 
-        # Convert received trace to GPSPoint object
-        gps_point = hmm_map_matcher.GPSPoint()
-        gps_point.latitude = received_trace["lat"]
-        gps_point.longitude = received_trace["lon"]
-
-        # Match the trace to the road network
-        matched_segments = matcher.matchTraceToRoads([gps_point])
-
-        # Insert into PostgreSQL
-        postgres_cursor.execute(
-            sql.SQL("INSERT INTO datas (timestamp_utc, matched_data) VALUES (%s, %s)"),
-            (datetime.utcnow().isoformat(), json.dumps(matched_segments))
-        )
-        postgres_connection.commit()
-
-        consumer.acknowledge(msg)
-        logging.info("✅ Successfully processed and inserted GPS trace.")
+      logging.info("📨 Message received from consumer!")
+  
+      received_trace = json.loads(msg.data().decode('utf-8'))
+      logging.info(f"📥 Received GPS trace: {received_trace}")
+  
+      # Convert to GPSPoint object
+      gps_point = hmm_map_matcher.GPSPoint()
+      gps_point.latitude = received_trace["lat"]
+      gps_point.longitude = received_trace["lon"]
+  
+      # Match to road network
+      matched_segments = matcher.matchTraceToRoads([gps_point])
+  
+      # Insert into PostgreSQL
+      postgres_cursor.execute(
+          sql.SQL("INSERT INTO datas (timestamp_utc, matched_data) VALUES (%s, %s)"),
+          (datetime.utcnow().isoformat(), json.dumps(matched_segments))
+      )
+      postgres_connection.commit()
+  
+      consumer.acknowledge(msg)
+      logging.info("✅ Successfully processed and inserted GPS trace.")
+  
     except Exception as e:
         logging.error(f"❌ Error processing message: {e}")
-        consumer.negative_acknowledge(msg)
+        if msg:
+            try:
+                consumer.negative_acknowledge(msg)
+            except Exception as nack_error:
+                logging.warning(f"⚠️ Failed to negative acknowledge: {nack_error}")

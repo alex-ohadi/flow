@@ -1,6 +1,7 @@
 services:
-  postgres-alex-flow:
-    container_name: postgres-map-matcher
+  pulsar-alex-postgres:
+    image: pulsar-alex-postgres:latest  
+    container_name: pulsar-alex-postgres
     build:
       context: .
       dockerfile: postgres/Dockerfile
@@ -15,14 +16,14 @@ services:
       - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       
-  map-matcher-alex-flow:
-    container_name: map-matcher-alex-flow
+  pulsar-alex-producer:
+    image: pulsar-alex-producer:latest  
+    container_name: pulsar-alex-producer
     depends_on:
-      - postgres-alex-flow
-      - pulsar-alex-flow
+      - pulsar-alex-postgres
     build:
       context: .
-      dockerfile: producer/Dockerfile
+      dockerfile: a_producer/Dockerfile
     env_file: ./.env
     restart: always
     networks:
@@ -30,26 +31,26 @@ services:
 
 
   pulsar-alex-consumer:
+    image: pulsar-alex-consumer:latest  
     container_name: pulsar-alex-consumer
     depends_on:
-      - postgres-alex-flow
-      - pulsar-alex-flow
+      - pulsar-alex-postgres
     build:
       context: .
-      dockerfile: consumer/Dockerfile
+      dockerfile: a_consumer/Dockerfile
     env_file: ./.env
     restart: always
     networks:
       - default
 
-  pulsar-alex-flow:
-    image: apachepulsar/pulsar:2.10.1
-    container_name: pulsar-broker
-    command: >
-      bash -c "bin/pulsar standalone"
-    ports:
-      - "6650:6650"
-      - "8080:8080" 
+  # pulsar:
+  #   image: apachepulsar/pulsar:2.10.1
+  #   container_name: pulsar-broker
+  #   command: >
+  #     bash -c "bin/pulsar standalone"
+  #   ports:
+  #     - "6650:6650"
+  #     - "8080:8080" 
 
 volumes:
   mongo_data_for_flow:
