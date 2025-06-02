@@ -108,6 +108,15 @@ brew install derailed/k9s/k9s
      `SELECT * FROM datas LIMIT 10; # Show the row data
    ```
 
+6. You can also tail the logs by drectly going into each container and running
+   ``` bash
+   `kubectl exec -it <consumer_pod> -- sh`
+   `tail -f consumer.log`
+   or
+   `kubectl exec -it <producer_pod> -- sh`
+   `tail -f producer.log`
+   ```  
+
 ![k9s](instructions/terminals.png?raw=true "Open terminals handling setup")
 
 ![Airflow](instructions/airflow.png?raw=true "Airflow")
