@@ -5,7 +5,7 @@
 ---
 
 ### Project Overview
-This project is a map matching system that uses Python and C++ to process GPS data accurately. It runs in Kubernetes with Apache Pulsar handling messaging. A producer sends GPS events to Pulsar, and three consumer pods listen and run the map matching on the data. This setup allows fast, reliable, and scalable processing of GPS traces.
+This project is a map matching system that uses Python and C++ to process GPS data accurately. It runs in Kubernetes with Apache Pulsar handling messaging. A producer sends GPS events to Pulsar, and two consumer replicas listen and run the map matching on the data. This setup allows fast, reliable, and scalable processing of GPS traces.
 
 
 ---
