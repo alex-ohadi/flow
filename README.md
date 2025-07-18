@@ -5,8 +5,9 @@
 ---
 
 ### Project Overview
-This project is a map matching system that uses Python and C++ to process GPS data accurately. It runs in Kubernetes with Apache Pulsar handling messaging. A producer sends GPS events to Pulsar, and two consumer replicas listen and run the map matching on the data. This setup allows fast, reliable, and scalable processing of GPS traces.
+Built a scalable map-matching pipeline that ingests millions of GPS points, parses them through a C++ matching algorithm, and finds the nearest road segment. The system was deployed in Kubernetes and scaled using Apache Pulsar to decouple message producers and consumers, enabling high-throughput geospatial data processing. The final product efficiently matched massive traffic datasets to road networks in real time using a distributed, event-driven architecture.
 
+- Alex Ohadi
 
 ---
 
